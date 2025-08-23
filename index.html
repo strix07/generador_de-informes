@@ -13,6 +13,8 @@
       --page-shadow: 0 12px 30px rgba(0,0,0,.55); --radius:16px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+      /* Variable para la escala de la miniatura */
+      --preview-scale: 0.42; 
     }
     *, *::before, *::after { box-sizing: border-box; }
     html,body{height:100%;}
@@ -21,7 +23,7 @@
       padding:20px; display: grid; grid-template-rows: auto 1fr;
       gap: 20px; height: 100vh; overflow: hidden;
     }
-    header{display:flex; align-items:center; justify-content:space-between}
+    header{display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 10px;}
     .brand{display:flex; align-items:center; gap:12px}
     .logo{
       width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
@@ -85,12 +87,13 @@
     .list{ margin:0; padding-left:18px; transition: font-size .2s; }
     .list li{ margin-bottom:3px }
     .footer{ position:absolute; bottom:0; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:8px 18mm; border-top:1px solid #e7ecf5; font-size:9pt; color:#556 }
-    .force-width {
-      width: 8.5in !important;
-      border-radius: 12px !important;
-      box-shadow: var(--page-shadow) !important;
-    }
     
+    /* Clase de ayuda para el JS: fuerza la escala a 100% */
+    .page.is-generating-pdf {
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
     /* === OPCIONES DE TAMAÑO DE FUENTE === */
     .page.font-size-1 .section h3 { font-size: 10.5pt; } .page.font-size-1 .section p, .page.font-size-1 .list { font-size: 9.5pt; }
     .page.font-size-2 .section h3 { font-size: 11pt; } .page.font-size-2 .section p, .page.font-size-2 .list { font-size: 10pt; }
@@ -99,15 +102,44 @@
     .page.font-size-5 .section h3 { font-size: 18.6pt; } .page.font-size-5 .section p, .page.font-size-5 .list { font-size: 18pt; }
 
     /* === Estilos Responsivos === */
-    @media (max-width: 980px) {
-      html, body { height: 100%; overflow: hidden; }
-      body { display: grid; grid-template-rows: auto 1fr; gap: 15px; padding: 15px; }
-      .wrap { grid-template-columns: 1fr; height: 100%; overflow-y: auto; overflow-x: hidden; }
-      .form-card, .preview { height: auto; max-height: none; overflow: visible; }
-      .row { grid-template-columns: 1fr; }
-      .preview .page { width: 100%; min-height: auto; margin-top: 15px; border-radius: var(--radius); box-shadow: none; }
+    @media (max-width: 700px) {
+      body {
+        padding: 10px; 
+        gap: 10px;
+        overflow: hidden; 
+      }
+      .wrap {
+        grid-template-columns: 1fr;
+        grid-auto-rows: min-content; 
+        height: 100%;
+        overflow-y: auto; 
+        overflow-x: hidden;
+      }
+      .form-card {
+        height: auto; 
+      }
+      .preview {
+        overflow: hidden; /* Ya no necesitamos scroll aquí */
+        padding: 15px 0;
+      }
+      .preview-scaler {
+        /* 8.5in * var(--preview-scale) = 342px */
+        width: calc(8.5in * var(--preview-scale));
+        /* 11in * var(--preview-scale) = 445px */
+        height: calc(11in * var(--preview-scale));
+        margin: 0 auto;
+      }
+      .page {
+        /* Aplicamos la transformación para la miniatura */
+        transform: scale(var(--preview-scale));
+        transform-origin: top left;
+      }
+      .row {
+        grid-template-columns: 1fr; 
+      }
+       .brand h1 { font-size: 16px; }
     }
-  </style>
+</style>
 </head>
 <body>
   <header>
@@ -172,7 +204,8 @@
       </div>
     </section>
     <section class="preview">
-      <article class="page" id="pageToPrint" aria-label="Página Carta">
+       <div class="preview-scaler">
+          <article class="page" id="pageToPrint" aria-label="Página Carta">
         <div class="page-inner">
           <div class="p-header">
             <div class="p-brand">
@@ -212,7 +245,8 @@
             <div id="outTecnico">Técnico: —</div>
           </div>
         </div>
-      </article>
+          </article>
+       </div> 
     </section>
   </div>
 
@@ -591,6 +625,11 @@
       // =========================================================================
       // === FUNCIÓN DE PDF MODIFICADA: YA NO GUARDA EN LA DB ===
       // =========================================================================
+     // ... (todo el código de App anterior sigue igual)
+
+      // =========================================================================
+      // === FUNCIÓN DE PDF MODIFICADA PARA MANEJAR LA ESCALA ===
+      // =========================================================================
       async generatePdf() {
         if (typeof html2pdf === "undefined") { alert("Error: html2pdf.bundle.min.js no está cargado."); return; }
         if (!this.validate()) return;
@@ -602,27 +641,33 @@
         const fileName = `Informe_Mantenimiento_${fecha}_${maquinaSafe}.pdf`;
         
         const options = {
-          margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.92 },
-          html2canvas: { scale: Math.min(window.devicePixelRatio || 1, 1.5), useCORS: true, logging: false },
-          jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+          margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true, logging: false }, // Aumentamos la escala para mejor calidad
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
-        const originalStyles = { width: element.style.width, boxShadow: element.style.boxShadow, border: element.style.border, borderRadius: element.style.borderRadius };
 
         try {
           printButton.disabled = true; printButton.textContent = 'Generando...';
-          Object.assign(element.style, { boxShadow: 'none', border: 'none', width: '8.5in' });
-          void element.offsetHeight;
           
+          // ✅ PASO 1: Forzar temporalmente la escala al 100% para la captura
+          element.classList.add('is-generating-pdf');
+          
+          // Pequeña demora para asegurar que el navegador aplique el cambio de estilo
+          await new Promise(resolve => setTimeout(resolve, 50));
+
           await html2pdf().set(options).from(element).save();
 
         } catch(error) {
             console.error("Fallo al generar PDF:", error);
             alert("Ocurrió un error al generar el PDF. Revisa la consola para más detalles.");
         } finally {
-          Object.assign(element.style, originalStyles);
+          // ✅ PASO 2: Quitar la clase para devolver la página a su vista en miniatura
+          element.classList.remove('is-generating-pdf');
           printButton.disabled = false; printButton.textContent = 'Descargar PDF';
         }
       },
+      
+      // ... (el resto del código de App sigue igual)
       
       clearForm() {
         if (!confirm('¿Limpiar todos los campos del formulario?')) return;
