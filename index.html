@@ -176,7 +176,8 @@ textarea { min-height: 80px; resize: vertical; }
 .page.font-size-4 .section h3 { font-size: 16.5pt; } .page.font-size-4 .section p, .page.font-size-4 .list { font-size: 16pt; }
 .page.font-size-5 .section h3 { font-size: 18.6pt; } .page.font-size-5 .section p, .page.font-size-5 .list { font-size: 18pt; }
 
-@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .preview { display: none; } }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .preview { display: none; }  .row { grid-template-columns: 1fr; 
+      }.brand h1 { font-size: 16px; } } .nav-tabs { padding: 8px 12px; font-size: 13px;}; }
 
 .form-section { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
 .form-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
@@ -270,7 +271,6 @@ textarea { min-height: 80px; resize: vertical; }
       <div id="tabGenerate" class="tab active" role="tab" aria-selected="true">Generar informe</div>
       <div id="tabSearch" class="tab" role="tab" aria-selected="false">Buscar informes</div>
     </div>
-    <div style="color:var(--muted); font-size:13px">Versión Unificada v3.0</div>
   </div>
 
   <div class="wrap">
@@ -349,6 +349,7 @@ textarea { min-height: 80px; resize: vertical; }
     </section>
 
     <section class="preview card">
+       <div class="preview-scaler"> 
         <article class="page" id="pageToPrint">
             <div class="page-inner">
                 <div class="p-header">
@@ -381,6 +382,7 @@ textarea { min-height: 80px; resize: vertical; }
                 </div>
             </div>
         </article>
+      </div>
     </section>
   </div>
 
