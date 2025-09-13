@@ -62,8 +62,8 @@ export default MasterDB;
 ## Instalación (para desarrolladores)
 ```bash
 # clona el repositorio
-git clone <tu-repo>
-cd <tu-repo>
+git clone https://github.com/strix07/generador_de-informes.git
+cd generador_de-informes
 
 # sirve los archivos con un servidor estático
 npx http-server -c-1 .
