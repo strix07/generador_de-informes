@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historial de Mantenimientos Preventivos • Newtech Solutions</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="manifest" href="../site.webmanifest">
+
+  <style>
+    :root {
+      --bg: #0b0d10; --card: #151922; --ink: #e9eef6; --muted: #96a0ad; --accent: #4cc3ff;
+      --ok: #4ddf88; --warn: #ffbf4c; --danger: #ff6b6b; --border: #263241;
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+      --transition-fast: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+      padding: 20px; display: grid; grid-template-rows: auto 1fr; gap: 12px; height: 100vh;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; animation: fadeInUp 0.5s 0.1s both; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .title-block { display: flex; flex-direction: column; }
+    .logo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #0b0d10; font-weight: 900; background: linear-gradient(135deg, #4cc3ff, #4ddf88); box-shadow: 0 6px 18px rgba(76, 195, 55, .35); transition: var(--transition-smooth); }
+    .brand:hover .logo { transform: rotate(-10deg) scale(1.1); }
+    .brand h1 { font-size: 18px; margin: 0; letter-spacing: .4px; }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+  .db-status { font-size: 12px; color: var(--muted); padding: 0; margin-top: 6px; border: none; border-radius: 0; }
+    
+    main { display: flex; flex-direction: column; gap: 12px; overflow: hidden; animation: fadeInUp 0.5s 0.2s both; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .search-box { flex-grow: 1; max-width: 400px; display: flex; align-items: center; gap: 8px; }
+    .history-container { display: flex; flex-direction: column; overflow-y: auto; }
+    
+  .btn { appearance: none; border: none; cursor: pointer; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 14px; background: #0e1218; color: var(--ink); border: 1px solid #2a394c; transition: var(--transition-fast); text-decoration: none; display: inline-block; }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.primary { background: linear-gradient(135deg, #4cc3ff, #4ddf88); color: #0b0d10; border: none; }
+    .btn.danger { border-color: #ff6b6b66; color: #ffb3b3; }
+    .btn.danger:hover:not(:disabled) { background: #ff6b6b22; }
+    .btn.btn-sm { padding: 4px 8px; font-size: 12px; border-radius: 8px; }
+  input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 10px 12px; background: #0e1218; color: var(--ink); border: 1px solid #2a394c; border-radius: 10px; outline: none; font-size: 14px; transition: var(--transition-fast); }
+  .search-box input[type="text"] { width: auto; flex: 1 1 auto; min-width: 0; }
+    input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(76, 195, 255, 0.2); }
+    textarea { min-height: 80px; resize: vertical; }
+
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab { padding: 6px 12px; border-radius: 8px; background: #0e1218; border: 1px solid var(--border); cursor: pointer; font-weight: 600; font-size: 13px; transition: var(--transition-fast); }
+    .tab:hover { background: #1f2632; }
+    .tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+    .history-table { width: 100%; border-collapse: collapse; font-size: 14px; flex-grow: 1; }
+    .history-table th, .history-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    .history-table th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .history-table th:last-child, .history-table td:last-child { text-align: right; }
+    .history-table tbody tr { transition: background-color 0.2s; }
+    .history-table tbody tr:hover { background-color: #ffffff08; cursor: pointer; }
+    .truncated-text { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .pagination-controls { display: none; justify-content: center; align-items: center; gap: 16px; padding: 12px 0 0 0; }
+    .pagination-controls.visible { display: flex; }
+    #pageIndicator { font-weight: 600; color: var(--muted); font-size: 14px; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 13, 16, 0.8); backdrop-filter: blur(8px); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
+    .modal-overlay.visible { display: flex; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: fadeInUp 0.4s 0.1s both; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-header h2 { margin: 0; font-size: 18px; }
+    .close-btn { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; }
+    .form-section { margin-top: 16px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .checkbox-group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;}
+    .checkbox-group { display: flex; flex-direction: column; gap: 8px; background: #0e1218; padding: 12px; border-radius: 10px; border: 1px solid #2a394c; max-height: 200px; overflow-y: auto; }
+    .checkbox-item { display: flex; align-items: center; }
+    .checkbox-item input { width: auto; margin-right: 10px; }
+    #additionalTasksContainer { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    
+    .details-view .detail-item { margin-bottom: 14px; }
+    .details-view .detail-item strong { color: var(--muted); display: block; font-size: 12px; margin-bottom: 4px; text-transform: uppercase;}
+    .details-view .detail-item p { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+    .details-view .detail-item ul { margin: 0; padding-left: 18px; }
+    .details-view .detail-item li { margin-bottom: 4px; }
+  /* Add spacing below lists in the checklist modal for better readability */
+  #checklistModal .details-view .detail-item ul { margin-bottom: 18px; }
+
+    #startupOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 13, 16, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; animation: fadeIn 0.4s ease; }
+    .overlay-box { max-width: 500px; animation: fadeInUp 0.5s 0.2s both; }
+    .overlay-box h1 { font-size: 24px; color: var(--accent); }
+    .overlay-box p { color: var(--muted); margin-bottom: 24px; }
+    .db-link-status { display: flex; justify-content: space-between; align-items: center; width: 100%; background: var(--card); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); }
+    .status-light { width: 12px; height: 12px; border-radius: 50%; transition: background .3s, box-shadow .3s; }
+    .status-light.pending { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+    .status-light.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    * { scrollbar-width: thin; scrollbar-color: var(--border) var(--card); }
+    ::-webkit-scrollbar { width: 12px; }
+    ::-webkit-scrollbar-track { background: var(--card); }
+    ::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; border: 3px solid var(--card); }
+    ::-webkit-scrollbar-thumb:hover { background-color: var(--muted); }
+
+    @media (max-width: 768px) {
+        body { padding: 10px; }
+        .toolbar { flex-direction: column; align-items: stretch; }
+        .filter-tabs { justify-content: center; }
+        .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="startupOverlay">
+    <div class="overlay-box">
+      <div class="brand" style="justify-content:center; margin-bottom:16px;">
+        <div class="logo">N</div><h1>Newtech Solutions • Historial de Mantenimientos Preventivos</h1>
+      </div>
+      <p>Para comenzar, por favor vincula el archivo de la base de datos (DataBase.js).</p>
+      <div class="db-link-status">
+        <span>Base de Datos (DataBase.js)</span>
+        <div id="dbStatusLight" class="status-light pending"></div>
+      </div>
+      <button class="btn primary" id="bindDbBtn">Vincular Base de Datos</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="logo">N</div>
+      <div class="title-block">
+        <h1> Newtech Solutions • Historial de Mantenimientos Preventivos</h1>
+        <div id="dbStatus" class="db-status">Base de Datos: <b>No vinculada</b></div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn primary" id="createMaintenanceBtn">Crear Mantenimiento</button>
+      <a href="../index.html" class="btn" target="_blank" rel="noopener noreferrer">Gestor de Informes</a>
+      <a href="../inventario/index.html" class="btn" target="_blank" rel="noopener noreferrer">Ir a Inventario</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="toolbar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Buscar en historial (técnico, tareas, observaciones...)">
+            <button class="btn btn-sm" id="checklistBtn" style="margin-left:8px;">Check list</button>
+        </div>
+        <div class="filter-tabs" id="machineFilterTabs">
+          <div class="tab active" data-machine="all">Todas</div>
+        </div>
+      </div>
+    </div>
+    <div class="card history-container">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Máquina</th>
+            <th>Tipo</th>
+            <th>Tareas Realizadas</th>
+            <th>Observaciones</th>
+            <th>Técnico</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+      </table>
+       <div class="pagination-controls" id="paginationControls">
+          <button class="btn" id="prevPageBtn">&larr; Anterior</button>
+          <span id="pageIndicator"></span>
+          <button class="btn" id="nextPageBtn">Siguiente &rarr;</button>
+        </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="maintenanceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Nuevo Registro de Mantenimiento</h2>
+        <button class="close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <form id="maintenanceForm">
+        <div class="form-grid">
+          <div class="form-section">
+            <label for="tecnico">Nombre del Técnico</label>
+            <input type="text" id="tecnico" required>
+          </div>
+          <div class="form-section">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" required>
+          </div>
+        </div>
+        <div class="form-section">
+          <label for="maquina">Máquina</label>
+          <select id="maquina" required>
+            <option value="">Seleccione una máquina...</option>
+          </select>
+        </div>
+        <div class="form-section" id="tipoMantenimientoContainer" style="display:none;">
+          <label for="tipoMantenimiento">Tipo de Mantenimiento</label>
+          <select id="tipoMantenimiento"></select>
+        </div>
+        <div class="form-section" id="tareasContainer" style="display:none;">
+            <div class="checkbox-group-header">
+                <label>Tareas Realizadas</label>
+                <button type="button" class="btn btn-sm" id="selectAllTasksBtn">Seleccionar Todas</button>
+            </div>
+          <div id="tareasCheckboxes" class="checkbox-group"></div>
+          <div id="additionalTasksContainer"></div>
+          <button type="button" class="btn" id="addCustomTaskBtn" style="margin-top:10px; font-size:12px;">+ Añadir otra tarea</button>
+        </div>
+        <div class="form-section">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" id="cancelBtn">Cancelar</button>
+          <button type="submit" class="btn primary">Guardar Mantenimiento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="detailsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Detalles del Mantenimiento</h2>
+        <button class="close-btn" id="closeDetailsModalBtn">&times;</button>
+      </div>
+      <div class="details-view">
+        <div class="detail-item">
+            <strong>Fecha</strong>
+            <p id="detailsFecha"></p>
+        </div>
+        <div class="detail-item">
+            <strong>Máquina</strong>
+            <p id="detailsMaquina"></p>
+        </div>
+        <div class="detail-item">
+            <strong>Tipo</strong>
+            <p id="detailsTipo"></p>
+        </div>
+        <div class="detail-item">
+            <strong>Técnico</strong>
+            <p id="detailsTecnico"></p>
+        </div>
+        <div class="detail-item">
+            <strong>Tareas Realizadas</strong>
+            <ul id="detailsTareas"></ul>
+        </div>
+        <div class="detail-item">
+            <strong>Observaciones</strong>
+            <p id="detailsObservaciones"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="checklistModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Check list de Mantenimientos</h2>
+        <button class="close-btn" id="closeChecklistBtn">&times;</button>
+      </div>
+      <div class="details-view">
+        <div class="detail-item">
+          <h3>Mantenimiento por tipo de máquina</h3>
+          <h4>M-10924, M-10925, S7000</h4>
+          <p><strong>Semanal:</strong></p>
+          <ul>
+            <li>Limpiar carcasa de la máquina y ranuras de ventilación.</li>
+            <li>Revisar/limpiar rodillos de limpieza y rodillos de transporte.</li>
+            <li>Revisar/limpiar guías, soportes, superficies deslizantes.</li>
+            <li>Revisar/limpiar correas de accionamiento y transporte de cada módulo.</li>
+            <li>Revisar/limpiar matriz del <em>embosser</em>.</li>
+            <li>Revisar pines, chupones, correa del módulo de <em>chip</em>.</li>
+            <li>Limpiar superficialmente cabezales y ruedas del módulo de banda.</li>
+            <li>Revisar/limpiar cabezales y ruedas del módulo de termo impresión.</li>
+          </ul>
+          <p><strong>Mensual:</strong></p>
+          <ul>
+            <li>Revisar/limpiar sensores ópticos de toda la máquina.</li>
+            <li>Revisar/limpiar pines del módulo de <em>chip</em>.</li>
+            <li>Revisar/limpiar cabezales del módulo de banda.</li>
+            <li>Revisar/limpiar módulo de <em>card-input</em> y <em>card-output</em>.</li>
+            <li>Revisar filtros de aire.</li>
+            <li>Revisar cableado eléctrico.</li>
+          </ul>
+          <p><strong>Trimestral:</strong></p>
+          <ul>
+            <li>Limpiar/engrasar guías lineales del <em>embosser</em>.</li>
+            <li>Revisar alineación de martillo superior e inferior del módulo <em>embosser</em>, ajustar de ser necesario.</li>
+            <li>Revisar sensibilidad del sensor de carácter superior e inferior, ajustar de ser necesario.</li>
+            <li>Revisar alineación de los émbolos del módulo <em>embosser</em>.</li>
+            <li>Limpiar/engrasar guías lineales del módulo de <em>chip</em>.</li>
+            <li>Revisar y engrasar de ser necesario rodamientos de rodillos en cada módulo.</li>
+            <li>Revisar filtros de aire, limpiar de ser necesario.</li>
+          </ul>
+          <hr>
+          <h4>Termoselladora</h4>
+          <p><strong>Cada 6 meses o al notar deterioro:</strong></p>
+          <ul>
+            <li>Cambiar cinta de aislante térmico.</li>
+          </ul>
+          <hr>
+          <h4>Deshumidificador 1, Deshumidificador 2</h4>
+          <p><strong>Cada 4 meses:</strong></p>
+          <ul>
+            <li>Revisar interruptor principal.</li>
+            <li>Revisar/limpiar placas electrónicas.</li>
+            <li>Revisar/limpiar carcasa.</li>
+            <li>Revisar/limpiar sensores.</li>
+            <li>Revisar/limpiar radiador.</li>
+            <li>Revisar/limpiar capacitor principal.</li>
+            <li>Revisar/limpiar compresor.</li>
+          </ul>
+          <hr>
+          <h4>Destructora de tarjetas</h4>
+          <p><strong>Cada 4 meses:</strong></p>
+          <ul>
+            <li>Revisar interruptor principal.</li>
+            <li>Revisar/limpiar placas electrónicas.</li>
+            <li>Revisar/limpiar carcasa.</li>
+            <li>Revisar/limpiar/ajustar correa.</li>
+            <li>Revisar/limpiar hojas del molino.</li>
+            <li>Lubricar ejes del molino y del motor eléctrico.</li>
+          </ul>
+          <hr>
+          <h4>Destructora de papel</h4>
+          <p><strong>Cada 4 meses:</strong></p>
+          <ul>
+            <li>Revisar interruptor principal.</li>
+            <li>Revisar/limpiar placas electrónicas.</li>
+            <li>Revisar/limpiar sensores.</li>
+            <li>Revisar/limpiar carcasa.</li>
+            <li>Revisar/limpiar/ajustar cadena.</li>
+            <li>Revisar/limpiar hojas del molino.</li>
+            <li>Lubricar ejes del molino y del motor eléctrico.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const App = {
+  elements: {
+        startupOverlay: document.getElementById('startupOverlay'),
+        bindDbBtn: document.getElementById('bindDbBtn'),
+        dbStatusLight: document.getElementById('dbStatusLight'),
+        dbStatus: document.getElementById('dbStatus'),
+        createBtn: document.getElementById('createMaintenanceBtn'),
+    checklistBtn: document.getElementById('checklistBtn'),
+        modal: document.getElementById('maintenanceModal'),
+        closeModalBtn: document.getElementById('closeModalBtn'),
+        cancelBtn: document.getElementById('cancelBtn'),
+        form: document.getElementById('maintenanceForm'),
+        tecnico: document.getElementById('tecnico'),
+        fecha: document.getElementById('fecha'),
+        maquina: document.getElementById('maquina'),
+        tipoMantenimientoContainer: document.getElementById('tipoMantenimientoContainer'),
+        tipoMantenimiento: document.getElementById('tipoMantenimiento'),
+        tareasContainer: document.getElementById('tareasContainer'),
+        tareasCheckboxes: document.getElementById('tareasCheckboxes'),
+        addCustomTaskBtn: document.getElementById('addCustomTaskBtn'),
+        additionalTasksContainer: document.getElementById('additionalTasksContainer'),
+        selectAllTasksBtn: document.getElementById('selectAllTasksBtn'),
+        observaciones: document.getElementById('observaciones'),
+        historyTableBody: document.getElementById('historyTableBody'),
+        searchInput: document.getElementById('searchInput'),
+        machineFilterTabs: document.getElementById('machineFilterTabs'),
+        detailsModal: document.getElementById('detailsModal'),
+        closeDetailsModalBtn: document.getElementById('closeDetailsModalBtn'),
+        detailsFecha: document.getElementById('detailsFecha'),
+        detailsMaquina: document.getElementById('detailsMaquina'),
+        detailsTipo: document.getElementById('detailsTipo'),
+        detailsTecnico: document.getElementById('detailsTecnico'),
+        detailsTareas: document.getElementById('detailsTareas'),
+        detailsObservaciones: document.getElementById('detailsObservaciones'),
+    checklistModal: document.getElementById('checklistModal'),
+    closeChecklistBtn: document.getElementById('closeChecklistBtn'),
+        paginationControls: document.getElementById('paginationControls'),
+        prevPageBtn: document.getElementById('prevPageBtn'),
+        nextPageBtn: document.getElementById('nextPageBtn'),
+        pageIndicator: document.getElementById('pageIndicator'),
+    },
+    state: {
+        databaseHandle: null,
+        db: { mantenimientos: { docs: [] } },
+        activeMachineFilter: 'all',
+        currentPage: 1,
+    },
+    config: {
+  idbStoreName: 'newtech_file_handles',
+        textLimit: 40,
+        recordsPerPage: 10,
+        machines: [ "M-10924", "M-10925", "S7000", "MS7020", "Termoselladora", "Deshumidificador 1", "Deshumidificador 2", "Destructora de tarjetas", "Destructora de papel" ],
+        maintenanceTasks: {
+            "M-10924": { "Semanal": ["Limpiar carcasa y ranuras de ventilación", "Revisar/limpiar rodillos de limpieza y transporte", "Revisar/limpiar guías, soportes, superficies deslizantes", "Revisar/limpiar correas de accionamiento y transporte", "Revisar/limpiar matriz del embosser", "Revisar pines, chupones, correa del módulo de chip", "Limpiar superficialmente cabezales y ruedas de banda", "Revisar/limpiar cabezales y ruedas de termo impresión"], "Mensual": ["Revisar/limpiar sensores ópticos", "Revisar/limpiar pines del módulo de chip", "Revisar/limpiar cabezales del módulo de banda", "Revisar/limpiar módulo de card-input y card-output", "Revisar filtros de aire", "Revisar cableado eléctrico"], "Trimestral": ["Limpiar/engrasar guías lineales del embosser", "Revisar alineación de martillos del embosser", "Revisar sensibilidad de sensores de carácter", "Revisar alineación de émbolos del embosser", "Limpiar/engrasar guías lineales del módulo de chip", "Revisar y engrasar rodamientos de rodillos", "Revisar/limpiar filtros de aire"] },
+            "Termoselladora": { "Cada 6 meses": ["Cambiar cinta de aislante térmico"] },
+            "Deshumidificador": { "Cada 4 meses": ["Revisar interruptor principal", "Revisar/limpiar placas electrónicas", "Revisar/limpiar carcasa", "Revisar/limpiar sensores", "Revisar/limpiar radiador", "Revisar/limpiar capacitor principal", "Revisar/limpiar compresor"] },
+            "Destructora de tarjetas": { "Cada 4 meses": ["Revisar interruptor principal", "Revisar/limpiar placas electrónicas", "Revisar/limpiar carcasa", "Revisar/limpiar/ajustar correa", "Revisar/limpiar hojas del molino", "Lubricar ejes del molino y motor"] },
+            "Destructora de papel": { "Cada 4 meses": ["Revisar interruptor principal", "Revisar/limpiar placas electrónicas", "Revisar/limpiar sensores", "Revisar/limpiar carcasa", "Revisar/limpiar/ajustar cadena", "Revisar/limpiar hojas del molino", "Lubricar ejes del molino y motor"] }
+        },
+    },
+
+    async init() {
+        this.config.maintenanceTasks["M-10925"] = this.config.maintenanceTasks["M-10924"];
+        this.config.maintenanceTasks["S7000"] = this.config.maintenanceTasks["M-10924"];
+        this.config.maintenanceTasks["MS7020"] = this.config.maintenanceTasks["M-10924"];
+        this.config.maintenanceTasks["Deshumidificador 1"] = this.config.maintenanceTasks["Deshumidificador"];
+        this.config.maintenanceTasks["Deshumidificador 2"] = this.config.maintenanceTasks["Deshumidificador"];
+        
+        this.bindEvents();
+        this.populateMachineDropdown();
+        this.populateMachineFilters();
+
+  let handle = await this.idbGet('database_handle');
+  if (!handle) {
+    handle = await this.idbGet('db_handle');
+  }
+    if (handle) await this.loadDatabase(handle);
+        this.checkBindingAndStart();
+    },
+
+    bindEvents() {
+        this.elements.bindDbBtn.onclick = () => this.bindDatabaseFile();
+        this.elements.createBtn.onclick = () => this.showModal(true);
+        this.elements.closeModalBtn.onclick = () => this.showModal(false);
+        this.elements.cancelBtn.onclick = () => this.showModal(false);
+        this.elements.closeDetailsModalBtn.onclick = () => this.showDetailsModal(false);
+        this.elements.form.onsubmit = (e) => this.handleFormSubmit(e);
+        this.elements.maquina.onchange = () => this.handleMachineChange();
+        this.elements.tipoMantenimiento.onchange = () => this.handleTypeChange();
+        this.elements.addCustomTaskBtn.onclick = () => this.addAnotherTaskInput();
+        this.elements.selectAllTasksBtn.onclick = () => this.selectAllTasks();
+        
+        this.elements.searchInput.oninput = () => {
+            this.state.currentPage = 1;
+            this.renderHistory();
+        };
+    if (this.elements.checklistBtn) {
+      this.elements.checklistBtn.onclick = () => {
+        if (this.elements.checklistModal) this.elements.checklistModal.classList.add('visible');
+      };
+    }
+    if (this.elements.closeChecklistBtn) {
+      this.elements.closeChecklistBtn.onclick = () => {
+        if (this.elements.checklistModal) this.elements.checklistModal.classList.remove('visible');
+      };
+    }
+    // Close modals with Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.elements.checklistModal) this.elements.checklistModal.classList.remove('visible');
+        if (this.elements.modal) this.elements.modal.classList.remove('visible');
+        if (this.elements.detailsModal) this.elements.detailsModal.classList.remove('visible');
+      }
+    });
+        
+        this.elements.historyTableBody.onclick = (e) => {
+            const row = e.target.closest('tr');
+            if (!row) return;
+
+            if (e.target.classList.contains('delete-btn')) {
+                this.handleDelete(e.target.dataset.id);
+            } else if (row.dataset.id) {
+                this.showDetailsModal(true, row.dataset.id);
+            }
+        };
+
+        this.elements.machineFilterTabs.onclick = (e) => {
+            if (e.target.classList.contains('tab')) this.handleFilterClick(e.target.dataset.machine);
+        };
+        
+        this.elements.prevPageBtn.onclick = () => {
+            if (this.state.currentPage > 1) {
+                this.state.currentPage--;
+                this.renderHistory();
+            }
+        };
+        
+        this.elements.nextPageBtn.onclick = () => {
+            this.state.currentPage++;
+            this.renderHistory();
+        };
+    },
+    
+    addAnotherTaskInput() {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Describe la nueva tarea';
+        input.className = 'additional-task-input';
+        this.elements.additionalTasksContainer.appendChild(input);
+        input.focus();
+    },
+    
+    selectAllTasks() {
+        this.elements.tareasCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    },
+
+    async handleDelete(id) {
+        if (!id || !confirm("¿Estás seguro de que quieres borrar este registro? Esta acción no se puede deshacer.")) return;
+        
+        this.state.db.mantenimientos.docs = this.state.db.mantenimientos.docs.filter(doc => doc.id !== id);
+        
+        if (await this.saveDatabase()) {
+            alert("Registro borrado correctamente.");
+            this.renderHistory();
+        }
+    },
+
+    checkBindingAndStart() {
+        this.elements.startupOverlay.style.display = this.state.databaseHandle ? 'none' : 'flex';
+    },
+
+    async bindDatabaseFile() {
+        try {
+            if (!window.showOpenFilePicker) throw new Error('API no soportada por el navegador.');
+            const [handle] = await window.showOpenFilePicker({ types: [{ description: 'JavaScript', accept: { 'application/javascript': ['.js'] } }] });
+            await this.loadDatabase(handle);
+            this.checkBindingAndStart();
+        } catch (e) {
+            alert('Error al vincular la base de datos: ' + e.message);
+        }
+    },
+    
+    async loadDatabase(handle) {
+        try {
+            if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                if (await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') throw new Error('Permiso de acceso al archivo denegado.');
+            }
+            const file = await handle.getFile();
+            const text = await file.text();
+            
+            let objectString = text.replace('const MasterDB =', '').replace('export default MasterDB;', '').trim();
+            if (objectString.endsWith(';')) objectString = objectString.slice(0, -1);
+            
+            const dbModule = new Function(`return ${objectString}`)();
+
+            if (!dbModule.mantenimientos || !Array.isArray(dbModule.mantenimientos.docs)) {
+                dbModule.mantenimientos = { docs: [] };
+            }
+            
+            this.state.db = dbModule;
+            this.state.databaseHandle = handle;
+            
+            await this.idbPut('db_handle', handle);
+            try { await this.idbPut('database_handle', handle); } catch (e) { }
+            this.elements.dbStatusLight.classList.replace('pending', 'ok');
+            this.updateDbStatus(handle.name);
+            this.renderHistory();
+        } catch (e) {
+            alert("El archivo DataBase.js no tiene el formato correcto o no se pudo leer. Error: " + e.message);
+            this.state.databaseHandle = null;
+        }
+    },
+
+    async saveDatabase() {
+        if (!this.state.databaseHandle) {
+            alert("No hay una base de datos vinculada para guardar.");
+            return false;
+        }
+        try {
+            const fullDatabaseObject = {
+                informes: this.state.db.informes || { docs: [] },
+                inventario: this.state.db.inventario || { lastUpdated: new Date().toISOString(), data: {} },
+                mantenimientos: this.state.db.mantenimientos || { docs: [] },
+            };
+            
+            const content = `const MasterDB = ${JSON.stringify(fullDatabaseObject, null, 2)};\n\nexport default MasterDB;`;
+            const writable = await this.state.databaseHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            return true;
+        } catch (e) {
+            alert("Error al guardar en el archivo: " + e.message);
+            return false;
+        }
+    },
+
+    async handleFormSubmit(event) {
+        event.preventDefault();
+        const checkedTasks = [...this.elements.tareasCheckboxes.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+        const additionalTasks = [...this.elements.additionalTasksContainer.querySelectorAll('input.additional-task-input')].map(input => input.value.trim()).filter(Boolean);
+        const allTasks = [...checkedTasks, ...additionalTasks];
+
+        const newRecord = {
+            id: new Date().toISOString() + '-' + Math.random().toString(36).substr(2, 9),
+            savedAt: new Date().toISOString(),
+            data: {
+                tecnico: this.elements.tecnico.value,
+                fecha: this.elements.fecha.value,
+                maquina: this.elements.maquina.value,
+                tipo: this.elements.tipoMantenimiento.value,
+                tareas: allTasks,
+                observaciones: this.elements.observaciones.value,
+            }
+        };
+
+        this.state.db.mantenimientos.docs.push(newRecord);
+        
+        if (await this.saveDatabase()) {
+            alert("Mantenimiento guardado correctamente.");
+            this.showModal(false);
+            this.renderHistory();
+        }
+    },
+
+    renderHistory() {
+        this.elements.historyTableBody.innerHTML = '';
+        const searchQuery = this.elements.searchInput.value.toLowerCase();
+        
+    const sortedDocs = [...this.state.db.mantenimientos.docs].sort((a, b) => new Date(b.data.fecha) - new Date(a.data.fecha));
+
+    const filteredDocs = sortedDocs.filter(doc => {
+            const data = doc.data;
+            const matchesFilter = this.state.activeMachineFilter === 'all' || data.maquina === this.state.activeMachineFilter;
+            if (!matchesFilter) return false;
+            if (searchQuery) return (data.tecnico.toLowerCase().includes(searchQuery) || data.maquina.toLowerCase().includes(searchQuery) || data.tipo.toLowerCase().includes(searchQuery) || data.observaciones.toLowerCase().includes(searchQuery) || data.tareas.some(t => t.toLowerCase().includes(searchQuery)));
+            return true;
+        });
+
+        if (filteredDocs.length === 0) {
+            this.elements.historyTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--muted);">No se encontraron registros.</td></tr>`;
+            this.updatePagination(0);
+            return;
+        }
+
+  const startIndex = (this.state.currentPage - 1) * this.config.recordsPerPage;
+  const endIndex = startIndex + this.config.recordsPerPage;
+  const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+
+        paginatedDocs.forEach(doc => {
+            const data = doc.data;
+            const row = document.createElement('tr');
+            row.dataset.id = doc.id;
+            
+            const truncatedTasks = data.tareas.join(', ');
+            const truncatedObs = data.observaciones || 'N/A';
+
+            row.innerHTML = `
+                <td>${new Date(data.fecha + 'T00:00:00').toLocaleDateString()}</td>
+                <td>${this.sanitize(data.maquina)}</td>
+                <td>${this.sanitize(data.tipo)}</td>
+                <td><div class="truncated-text">${this.sanitize(truncatedTasks)}</div></td>
+                <td><div class="truncated-text">${this.sanitize(truncatedObs)}</div></td>
+                <td>${this.sanitize(data.tecnico)}</td>
+                <td><button class="btn danger btn-sm delete-btn" data-id="${doc.id}">Borrar</button></td>
+            `;
+            this.elements.historyTableBody.appendChild(row);
+        });
+        
+  this.updatePagination(filteredDocs.length);
+    },
+    
+    updatePagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / this.config.recordsPerPage);
+
+        if (totalPages <= 1) {
+            this.elements.paginationControls.classList.remove('visible');
+            return;
+        }
+
+        this.elements.paginationControls.classList.add('visible');
+        this.elements.pageIndicator.textContent = `Página ${this.state.currentPage} de ${totalPages}`;
+        
+        this.elements.prevPageBtn.disabled = this.state.currentPage === 1;
+        this.elements.nextPageBtn.disabled = this.state.currentPage === totalPages;
+    },
+
+    populateMachineDropdown() {
+        this.config.machines.forEach(machine => this.elements.maquina.add(new Option(machine, machine)));
+    },
+    
+    populateMachineFilters() {
+        this.config.machines.forEach(machine => {
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            tab.dataset.machine = machine;
+            tab.textContent = machine;
+            this.elements.machineFilterTabs.appendChild(tab);
+        });
+    },
+
+    handleFilterClick(machine) {
+        this.state.activeMachineFilter = machine;
+        this.state.currentPage = 1;
+        this.elements.machineFilterTabs.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.machine === machine));
+        this.renderHistory();
+    },
+
+    handleMachineChange() {
+        const machine = this.elements.maquina.value;
+        const maintenanceDef = this.config.maintenanceTasks[machine];
+        
+        this.elements.tipoMantenimiento.innerHTML = '';
+        this.elements.tareasContainer.style.display = 'none';
+        
+        if (maintenanceDef) {
+            this.elements.tipoMantenimientoContainer.style.display = 'block';
+            Object.keys(maintenanceDef).forEach(type => this.elements.tipoMantenimiento.add(new Option(type, type)));
+            this.handleTypeChange();
+        } else {
+            this.elements.tipoMantenimientoContainer.style.display = 'none';
+        }
+    },
+
+    handleTypeChange() {
+        const machine = this.elements.maquina.value;
+        const type = this.elements.tipoMantenimiento.value;
+        const tasks = this.config.maintenanceTasks[machine]?.[type];
+
+        this.elements.tareasCheckboxes.innerHTML = '';
+        if (tasks) {
+            this.elements.tareasContainer.style.display = 'block';
+            tasks.forEach(task => {
+                const id = `task-${task.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                this.elements.tareasCheckboxes.innerHTML += `<label class="checkbox-item" for="${id}"><input type="checkbox" id="${id}" value="${this.sanitize(task)}"><span>${this.sanitize(task)}</span></label>`;
+            });
+        } else {
+            this.elements.tareasContainer.style.display = 'none';
+        }
+    },
+
+    showModal(visible) {
+        if (visible && !this.state.databaseHandle) {
+            alert("Primero debe vincular un archivo de base de datos.");
+            return;
+        }
+        if (visible) {
+            this.elements.form.reset();
+            this.elements.fecha.valueAsDate = new Date();
+            this.elements.tipoMantenimientoContainer.style.display = 'none';
+            this.elements.tareasContainer.style.display = 'none';
+            this.elements.additionalTasksContainer.innerHTML = '';
+        }
+        this.elements.modal.classList.toggle('visible', visible);
+    },
+
+    showDetailsModal(visible, id = null) {
+        if (visible && id) {
+            const record = this.state.db.mantenimientos.docs.find(doc => doc.id === id);
+            if (!record) return;
+
+            const data = record.data;
+            this.elements.detailsFecha.textContent = new Date(data.fecha + 'T00:00:00').toLocaleDateString();
+            this.elements.detailsMaquina.textContent = data.maquina;
+            this.elements.detailsTipo.textContent = data.tipo;
+            this.elements.detailsTecnico.textContent = data.tecnico;
+            this.elements.detailsTareas.innerHTML = data.tareas.map(t => `<li>${this.sanitize(t)}</li>`).join('');
+            this.elements.detailsObservaciones.textContent = data.observaciones || 'Sin observaciones.';
+        }
+        this.elements.detailsModal.classList.toggle('visible', visible);
+    },
+
+    updateDbStatus(name) {
+        this.elements.dbStatus.innerHTML = `DB: <b>${this.sanitize(name)}</b>`;
+    },
+    
+    sanitize(str) {
+        if (!str) return '';
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    },
+
+    idbOp: (type, op) => new Promise((res, rej) => {
+        const r = indexedDB.open(App.config.idbStoreName, 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('h');
+        r.onsuccess = () => {
+            const db = r.result, tx = db.transaction('h', type), req = op(tx.objectStore('h'));
+            req.onsuccess = () => { db.close(); res(req.result); };
+            req.onerror = () => { db.close(); rej(req.error); };
+        }; r.onerror = () => rej(r.error);
+    }),
+    idbGet: (key) => App.idbOp('readonly', s => s.get(key)),
+    idbPut: (key, val) => App.idbOp('readwrite', s => s.put(val, key)),
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>

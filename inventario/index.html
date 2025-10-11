@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Inventario</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="manifest" href="../site.webmanifest">
+    <style>
+    :root{
+      --bg:#0b0d10; --card:#151922; --ink:#e9eef6; --muted:#96a0ad; --accent:#4cc3ff;
+      --ok:#4ddf88; --warn:#ffbf4c; --danger:#ff6b6b; --border:#263241;
+      --page-shadow: 0 12px 30px rgba(0,0,0,.55); --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    
+    html{
+      height:100%;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--bg);
+    }
+    html::-webkit-scrollbar { 
+        width: 8px;
+    }
+    html::-webkit-scrollbar-track { 
+        background: var(--bg); 
+    }
+    html::-webkit-scrollbar-thumb {
+        background-color: var(--border);
+        border-radius: 8px;
+        border: 1px solid var(--bg);
+        transition: background-color .2s;
+    }
+    html::-webkit-scrollbar-thumb:hover { 
+        background-color: var(--accent);
+    }
+
+    body{
+      margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+      padding:20px;
+      min-height: 100vh;
+      display: grid; 
+    }
+
+    #app-container {
+        display: flex;       
+        flex-direction: column; 
+        gap: 12px;           
+        min-height: 0; 
+    }
+
+    header{display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 10px;}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{
+      width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
+      color:#0b0d10; font-weight:900; background:linear-gradient(135deg,#4cc3ff,#4ddf88);
+      box-shadow:0 6px 18px rgba(76,195,55,.35);
+    }
+    .brand h1{font-size:18px; margin:0; letter-spacing:.4px}
+    .sub{color:var(--muted); font-size:12px; margin-top:2px}
+
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .main-content{
+        display:grid; grid-template-rows: auto auto 1fr auto; gap:12px;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px}
+    
+    input[type="text"], input[type="number"], textarea{
+      width:100%; padding:10px 12px; background:#0e1218; color:var(--ink); border:1px solid #2a394c;
+      border-radius:10px; outline:none; font-size:14px; transition:.2s border;
+    }
+    textarea {min-height: 80px; resize: vertical;}
+    label { display: block; font-size:13px; color:var(--muted); margin:12px 0 6px }
+
+        .btn{
+            appearance:none; border:none; cursor:pointer; padding:10px 14px; border-radius:12px;
+            font-weight:700; font-size:14px; background:#0e1218; color:var(--ink);
+            border:1px solid #2a394c; transition: all .2s;
+            text-decoration: none; display: inline-block;
+        }
+    .btn:hover:not(:disabled) { filter: brightness(1.2); }
+    .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+    .btn.primary{background:linear-gradient(135deg,#4cc3ff,#4ddf88); color:#0b0d10; border:none}
+    .btn.danger{border-color:#ff6b6b66; color:#ffb3b3}
+    .btn.active {
+        background: linear-gradient(135deg,#4cc3ff,#4ddf88); color:#081018; box-shadow:0 6px 18px rgba(76,195,55,.12);
+        border-color: #4cc3ff;
+    }
+
+    .search-bar { width: 100%; }
+
+    .table-container { 
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) var(--card);
+    }
+    .table-container::-webkit-scrollbar { width: 8px; }
+    .table-container::-webkit-scrollbar-track { background: var(--card); }
+    .table-container::-webkit-scrollbar-thumb {
+        background-color: var(--border);
+        border-radius: 8px;
+        border: 1px solid var(--card);
+        transition: background-color .2s;
+    }
+    .table-container::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+
+    .inventory-table { width:100%; border-collapse: collapse; font-size:13px }
+    .inventory-table thead th { text-align:left; padding:8px 12px; color:var(--muted); font-weight:700; border-bottom:1px solid var(--border); position: sticky; top: 0; background: var(--card); }
+    .inventory-table tbody td { padding:10px 12px; border-bottom:1px dashed #1f2832 }
+    .inventory-table tbody tr { cursor:pointer; transition: background .2s; }
+    .inventory-table tbody tr:hover { background:#0f151a }
+    .stock-ok { color: var(--ok); font-weight: bold; }
+    .stock-warn { color: var(--warn); font-weight: bold; }
+    .stock-danger { color: var(--danger); font-weight: bold; }
+
+    .pagination { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+    .pagination span { font-size: 13px; color: var(--muted); }
+
+    .filters-container {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modal {
+        display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+        width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7);
+        align-items: center; justify-content: center;
+    }
+    .modal-content {
+        background-color: var(--card); margin: auto; padding: 20px;
+        border: 1px solid var(--border); border-radius: var(--radius);
+        width: 90%; max-width: 500px;
+        display: flex; flex-direction: column;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .modal-header h2 { margin: 0; font-size: 18px; }
+    .close-btn { color: var(--muted); font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close-btn:hover { color: var(--ink); }
+    .modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+    .modal-body .row {display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+    #history-content { white-space: pre-wrap; max-height: 60vh; overflow-y: auto; background: #0e1218; padding: 10px; border-radius: 10px; font-family: var(--mono); font-size: 12px;}
+
+    #app-container { display: none; }
+    #file-loader {
+        display: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        height: 100%; text-align: center;
+    }
+
+    @keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#app-container {
+    animation: fadeInUp .5s .2s ease-out backwards;
+}
+
+input[type="text"], input[type="number"], textarea {
+    transition: border-color .2s, box-shadow .2s;
+}
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(76, 195, 255, 0.2);
+}
+
+.btn {
+    transition: all .2s ease-out;
+}
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.btn:active:not(:disabled) {
+    transform: translateY(0px);
+    filter: brightness(1.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+}
+
+.logo {
+    transition: transform .3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.logo:hover {
+    transform: rotate(-10deg) scale(1.1);
+}
+
+.inventory-table tbody tr {
+    transition: background .2s, transform .2s ease-out;
+}
+.inventory-table tbody tr:hover {
+    background: #19202b;
+    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    position: relative;
+    z-index: 10;
+}
+
+.modal {
+    animation: fadeInUp .3s ease-out;
+}
+.modal-content {
+    animation: scaleIn .3s .1s ease-out backwards;
+}
+
+    @media (max-width: 730px) {
+        body { padding: 10px; }
+        html, body { -ms-overflow-style: none; scrollbar-width: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .main-content.card { padding: 12px; }
+        .filters-container .btn { padding: 8px 10px; font-size: 13px; }
+        .inventory-table { font-size: 12px; }
+        .inventory-table th:nth-child(4),
+        .inventory-table td:nth-child(4) { display: none; }
+        .table-container { -ms-overflow-style: none; scrollbar-width: none; }
+        .table-container::-webkit-scrollbar { display: none; }
+        .modal-content { width: 95%; padding: 15px; }
+        .modal-body .row { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+
+    <div id="file-loader">
+        <div class="brand">
+            <div class="logo">N</div>
+            <h1>Gestor de Inventario</h1>
+        </div>
+        <p class="sub">Para comenzar, vincula tu base de datos. Los cambios se guardarán automáticamente.</p>
+        <button class="btn primary" id="link-db-btn" style="margin-top: 20px;">Vincular Base de Datos (DataBase.js)</button>
+    </div>
+
+    <div id="app-container">
+        <header>
+            <div class="brand">
+                <div class="logo">N</div>
+                <div>
+                    <h1>Gestor de Inventario - NewTech Solutions</h1>
+                    <div class="sub">Base de datos: <strong id="db-filename"></strong></div>
+                    <div class="sub">Última actualización: <strong id="last-update-date">N/A</strong></div>
+                </div>
+            </div>
+            <div class="header-actions">
+                 <button class="btn primary" id="add-item-btn">Añadir Ítem Nuevo</button>
+                 <button class="btn" id="history-btn">Ver Historial</button>
+                 <a href="../index.html" class="btn" target="_blank" rel="noopener noreferrer">Informes Técnicos</a>
+                 <a href="../Preventivos/index.html" class="btn" target="_blank" rel="noopener noreferrer">Ir a Preventivos</a>
+            </div>
+        </header>
+
+        <div class="main-content card">
+             <input type="text" id="search-input" class="search-bar" placeholder="Buscar por nombre, código, caja, observación o cantidad...">
+            
+             <div class="filters-container">
+                <div id="caja-filters"></div>
+                <button class="btn" id="low-quantity-filter-btn">Poco stock</button>
+             </div>
+
+            <div class="table-container">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Caja</th>
+                            <th>Ubicación</th>
+                            <th>Cantidad</th>
+                            <th>Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-body"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <button id="prev-page" class="btn">Anterior</button>
+                <span id="page-info">Página 1 de 1</span>
+                <button id="next-page" class="btn">Siguiente</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Añadir Nuevo Ítem</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="add-item-form">
+                    <div class="row">
+                        <div><label for="add-codigo">Código</label><input type="text" id="add-codigo"></div>
+                        <div><label for="add-nombre">Nombre</label><input type="text" id="add-nombre" required></div>
+                    </div>
+                    <div class="row">
+                        <div><label for="add-caja">Caja</label><input type="text" id="add-caja" required></div>
+                        <div><label for="add-cantidad">Cantidad</label><input type="number" id="add-cantidad" required></div>
+                    </div>
+                    <div class="row">
+                        <div><label for="add-loc_rack">Rack</label><input type="text" id="add-loc_rack"></div>
+                        <div><label for="add-loc_row">Fila (Row)</label><input type="text" id="add-loc_row"></div>
+                    </div>
+                    <label for="add-observacion">Observación</label>
+                    <textarea id="add-observacion"></textarea>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" form="add-item-form" class="btn primary">Guardar Ítem</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Editar Ítem</h2><span class="close-btn">&times;</span></div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-original-index">
+                    <div class="row">
+                        <div><label for="edit-codigo">Código</label><input type="text" id="edit-codigo"></div>
+                        <div><label for="edit-nombre">Nombre</label><input type="text" id="edit-nombre" required></div>
+                    </div>
+                     <div class="row">
+                        <div><label for="edit-caja">Caja</label><input type="text" id="edit-caja"></div>
+                        <div><label for="edit-cantidad">Cantidad</label><input type="number" id="edit-cantidad"></div>
+                    </div>
+                     <div class="row">
+                        <div><label for="edit-loc_rack">Rack</label><input type="text" id="edit-loc_rack"></div>
+                        <div><label for="edit-loc_row">Fila (Row)</label><input type="text" id="edit-loc_row"></div>
+                    </div>
+                    <label for="edit-observacion">Observación</label>
+                    <textarea id="edit-observacion"></textarea>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="delete-btn" class="btn danger">Borrar</button>
+                <button id="save-changes-btn" class="btn primary">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Historial de Cambios</h2><span class="close-btn">&times;</span></div>
+            <div class="modal-body"><div id="history-content">Cargando historial...</div></div>
+            <div class="modal-footer">
+                <button class="btn" id="clear-history-btn">Limpiar Historial</button>
+                <button class="btn primary" id="save-history-btn">Vincular Archivo y Guardar</button>
+            </div>
+        </div>
+    </div>
+    
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Objeto para manejar la persistencia del vínculo en IndexedDB
+        const idb = {
+            storeName: 'newtech_file_handles',
+            op: (type, op) => new Promise((res, rej) => {
+                const r = indexedDB.open(idb.storeName, 1);
+                r.onupgradeneeded = () => r.result.createObjectStore('h');
+                r.onsuccess = () => {
+                    const db = r.result, tx = db.transaction('h', type), req = op(tx.objectStore('h'));
+                    req.onsuccess = () => { db.close(); res(req.result); };
+                    req.onerror = () => { db.close(); rej(req.error); };
+                };
+                r.onerror = () => rej(r.error);
+            }),
+            get: (key) => idb.op('readonly', s => s.get(key)),
+            put: (key, val) => idb.op('readwrite', s => s.put(val, key)),
+        };
+
+        let fullDatabase = {};
+        let inventarioData = {};
+        let allItems = [];
+        let filteredItems = [];
+        let history = [];
+        let currentPage = 1;
+        const rowsPerPage = 15;
+
+        let dbFileHandle = null;
+        let historyFileHandle = null;
+
+        let activeCajaFilter = 'all';
+        let isLowQuantityFilterActive = false;
+
+        const linkDbBtn = document.getElementById('link-db-btn');
+        const fileLoader = document.getElementById('file-loader');
+        const appContainer = document.getElementById('app-container');
+        const dbFilename = document.getElementById('db-filename');
+        const lastUpdateDate = document.getElementById('last-update-date');
+        const searchInput = document.getElementById('search-input');
+        const inventoryBody = document.getElementById('inventory-body');
+        const prevPageBtn = document.getElementById('prev-page');
+        const nextPageBtn = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+        const lowQuantityFilterBtn = document.getElementById('low-quantity-filter-btn');
+
+        async function loadDatabaseFromFileHandle(handle) {
+            try {
+                if(await verifyFileHandlePermission(handle) === false) {
+                    dbFileHandle = null; // Anulamos el handle si no hay permiso
+                    return;
+                }
+                const file = await handle.getFile();
+                const content = await file.text();
+                
+                const jsonString = content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1);
+                fullDatabase = JSON.parse(jsonString);
+
+                if (fullDatabase && fullDatabase.inventario && fullDatabase.inventario.data) {
+                    inventarioData = fullDatabase.inventario;
+                    allItems = Object.values(inventarioData.data).flat();
+                    updateLastUpdated(inventarioData.lastUpdated);
+                } else {
+                    alert("El formato del archivo DataBase.js no es el esperado.");
+                    return;
+                }
+
+                allItems.forEach((item, index) => item.originalIndex = index);
+                dbFilename.textContent = file.name;
+                appContainer.style.display = 'flex';
+                fileLoader.style.display = 'none';
+                
+                populateCajaFilters();
+                applyFiltersAndRender();
+
+                dbFileHandle = handle;
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error("Error al procesar la base de datos:", error);
+                    alert("Ocurrió un error al cargar el archivo. Asegúrate de que el formato sea correcto.");
+                    dbFileHandle = null;
+                }
+            }
+        }
+
+        // Bloque de arranque automático
+        (async () => {
+            const savedDbHandle = await idb.get('database_handle');
+            if (savedDbHandle) {
+                await loadDatabaseFromFileHandle(savedDbHandle);
+            } else {
+                console.log("No se encontró un vínculo. Mostrando pantalla de bienvenida.");
+                fileLoader.style.display = 'flex';
+            }
+        })();
+
+        linkDbBtn.addEventListener('click', async () => {
+            if (!window.showOpenFilePicker) {
+                alert("Tu navegador no soporta la API para vincular archivos.");
+                return;
+            }
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{ description: 'JavaScript files', accept: { 'text/javascript': ['.js'] } }],
+                });
+                await idb.put('database_handle', handle);
+                await loadDatabaseFromFileHandle(handle);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error("Error al vincular la base de datos:", error);
+                }
+            }
+        });
+
+        async function verifyFileHandlePermission(fileHandle) {
+            const options = { mode: 'readwrite' };
+            if (await fileHandle.queryPermission(options) === 'granted') return true;
+            if (await fileHandle.requestPermission(options) === 'granted') return true;
+            alert("Permiso para acceder al archivo denegado. El guardado automático no funcionará.");
+            return false;
+        }
+
+        function updateLastUpdated(isoDateString) {
+            if (isoDateString) {
+                lastUpdateDate.textContent = new Date(isoDateString).toLocaleString();
+            } else {
+                lastUpdateDate.textContent = 'Ahora mismo';
+            }
+        }
+
+        function populateCajaFilters() {
+            const cajaFiltersContainer = document.getElementById('caja-filters');
+            cajaFiltersContainer.innerHTML = '';
+            const cajas = [...new Set(allItems.map(item => item.caja).filter(c => c))].sort();
+            const allBtn = document.createElement('button');
+            allBtn.className = 'btn active';
+            allBtn.textContent = 'TODAS';
+            allBtn.dataset.caja = 'all';
+            cajaFiltersContainer.appendChild(allBtn);
+            cajas.forEach(caja => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.textContent = `Caja ${caja}`;
+                btn.dataset.caja = caja;
+                cajaFiltersContainer.appendChild(btn);
+            });
+            cajaFiltersContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    activeCajaFilter = e.target.dataset.caja;
+                    cajaFiltersContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    applyFiltersAndRender();
+                }
+            });
+        }
+
+        lowQuantityFilterBtn.addEventListener('click', () => {
+            isLowQuantityFilterActive = !isLowQuantityFilterActive;
+            lowQuantityFilterBtn.classList.toggle('active');
+            applyFiltersAndRender();
+        });
+
+        searchInput.addEventListener('input', applyFiltersAndRender);
+
+        // -- ESTA ES LA FUNCIÓN CORREGIDA --
+        // Ahora es síncrona y opera sobre los datos en memoria, lo que es rápido y no rompe los eventos.
+        function applyFiltersAndRender() {
+            let tempItems = [...allItems];
+            if (activeCajaFilter !== 'all') {
+                tempItems = tempItems.filter(item => item.caja === activeCajaFilter);
+            }
+            if (isLowQuantityFilterActive) {
+                tempItems = tempItems.filter(item => item.cantidad <= 2);
+            }
+            const query = searchInput.value.toLowerCase();
+            if (query) {
+                tempItems = tempItems.filter(item =>
+                    Object.values(item).some(val => String(val).toLowerCase().includes(query))
+                );
+            }
+            filteredItems = tempItems;
+            currentPage = 1;
+            renderTable();
+        }
+
+        function getQuantityClass(quantity) {
+            if (quantity <= 2) return 'stock-danger';
+            if (quantity >= 3 && quantity <= 5) return 'stock-warn';
+            if (quantity > 5) return 'stock-ok';
+            return '';
+        }
+
+        function renderTable() {
+            inventoryBody.innerHTML = '';
+            const totalPages = Math.ceil(filteredItems.length / rowsPerPage);
+            pageInfo.textContent = `Página ${currentPage} de ${totalPages || 1}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage >= totalPages;
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedItems = filteredItems.slice(start, end);
+
+            paginatedItems.forEach(item => {
+                const row = document.createElement('tr');
+                const quantityClass = getQuantityClass(item.cantidad);
+                row.innerHTML = `
+                    <td>${item.codigo || 'N/A'}</td>
+                    <td>${item.nombre}</td>
+                    <td>${item.caja}</td>
+                    <td>${(item.loc_rack || '')}-${(item.loc_row || '')}</td>
+                    <td class="${quantityClass}">${item.cantidad ?? 'N/A'}</td>
+                    <td>${item.observacion || ''}</td>`;
+                row.addEventListener('click', () => openEditModal(item));
+                inventoryBody.appendChild(row);
+            });
+        }
+
+        prevPageBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); } });
+        nextPageBtn.addEventListener('click', () => { if (currentPage < Math.ceil(filteredItems.length / rowsPerPage)) { currentPage++; renderTable(); } });
+
+        function setupModal(modalId, openBtnId) {
+            const modal = document.getElementById(modalId);
+            const openBtn = document.getElementById(openBtnId);
+            const closeBtn = modal.querySelector('.close-btn');
+            
+            if (openBtn) openBtn.addEventListener('click', () => modal.style.display = 'flex');
+            closeBtn.addEventListener('click', () => modal.style.display = 'none');
+            window.addEventListener('click', (event) => { if (event.target == modal) modal.style.display = 'none'; });
+            return modal;
+        }
+
+        const editModal = setupModal('edit-modal');
+        const editForm = document.getElementById('edit-form');
+        const saveChangesBtn = document.getElementById('save-changes-btn');
+        const deleteBtn = document.getElementById('delete-btn');
+
+        function openEditModal(item) {
+            const originalItem = findOriginalItem(item);
+            if (!originalItem) {
+                alert("Ítem no encontrado en la base de datos principal. Puede que los datos estén desactualizados.");
+                return;
+            }
+            editForm['edit-original-index'].value = allItems.indexOf(originalItem);
+            editForm['edit-codigo'].value = originalItem.codigo || '';
+            editForm['edit-nombre'].value = originalItem.nombre || '';
+            editForm['edit-caja'].value = originalItem.caja || '';
+            editForm['edit-loc_rack'].value = originalItem.loc_rack || '';
+            editForm['edit-loc_row'].value = originalItem.loc_row || '';
+            editForm['edit-cantidad'].value = originalItem.cantidad ?? '';
+            editForm['edit-observacion'].value = originalItem.observacion || '';
+            editModal.style.display = 'flex';
+        }
+
+        saveChangesBtn.addEventListener('click', async () => {
+            const index = parseInt(editForm['edit-original-index'].value, 10);
+            if (isNaN(index) || !allItems[index]) return;
+            const originalItem = { ...allItems[index] };
+            const updatedItem = allItems[index];
+            updatedItem.codigo = editForm['edit-codigo'].value || null;
+            updatedItem.nombre = editForm['edit-nombre'].value;
+            updatedItem.caja = editForm['edit-caja'].value;
+            updatedItem.loc_rack = editForm['edit-loc_rack'].value;
+            updatedItem.loc_row = editForm['edit-loc_row'].value;
+            updatedItem.cantidad = editForm['edit-cantidad'].value !== '' ? parseInt(editForm['edit-cantidad'].value, 10) : null;
+            updatedItem.observacion = editForm['edit-observacion'].value || null;
+            
+            await logHistory('MODIFICADO', originalItem, updatedItem);
+            await saveDataToFile();
+            applyFiltersAndRender();
+            editModal.style.display = 'none';
+        });
+
+        deleteBtn.addEventListener('click', async () => {
+            if (confirm("¿Estás seguro de que quieres borrar este ítem?")) {
+                const index = parseInt(editForm['edit-original-index'].value, 10);
+                if (isNaN(index) || !allItems[index]) return;
+                
+                await logHistory('BORRADO', allItems[index]);
+                allItems.splice(index, 1);
+                
+                await saveDataToFile();
+                applyFiltersAndRender();
+                editModal.style.display = 'none';
+                alert("Ítem borrado.");
+            }
+        });
+
+        const addItemModal = setupModal('add-item-modal', 'add-item-btn');
+        const addItemForm = document.getElementById('add-item-form');
+        addItemForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newItem = {
+                codigo: document.getElementById('add-codigo').value || null,
+                nombre: document.getElementById('add-nombre').value,
+                caja: document.getElementById('add-caja').value,
+                loc_rack: document.getElementById('add-loc_rack').value,
+                loc_row: document.getElementById('add-loc_row').value,
+                cantidad: parseInt(document.getElementById('add-cantidad').value, 10),
+                observacion: document.getElementById('add-observacion').value || null,
+                originalIndex: allItems.length
+            };
+            allItems.push(newItem);
+            
+            await logHistory('AÑADIDO', null, newItem);
+            await saveDataToFile();
+            
+            populateCajaFilters();
+            applyFiltersAndRender();
+            addItemModal.style.display = 'none';
+            addItemForm.reset();
+        });
+
+        const historyModal = setupModal('history-modal', 'history-btn');
+        const historyContent = document.getElementById('history-content');
+        const saveHistoryBtn = document.getElementById('save-history-btn');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        document.getElementById('history-btn').addEventListener('click', renderHistory);
+
+        async function logHistory(action, oldData = null, newData = null) {
+            const logEntry = {
+                timestamp: new Date().toISOString(),
+                action,
+                item: oldData?.nombre || newData?.nombre,
+                details: []
+            };
+            if (action === 'MODIFICADO') {
+                Object.keys(newData).forEach(key => {
+                    if (String(newData[key]) !== String(oldData[key])) {
+                        logEntry.details.push(`'${key}': de '${oldData[key]}' a '${newData[key]}'`);
+                    }
+                });
+            } else if (action === 'BORRADO') {
+                logEntry.details.push(`Ítem borrado: ${JSON.stringify(oldData)}`);
+            } else if (action === 'AÑADIDO') {
+                logEntry.details.push(`Ítem añadido: ${JSON.stringify(newData)}`);
+            }
+            if (logEntry.details.length > 0) {
+                history.unshift(logEntry);
+                await writeHistoryToFile();
+            }
+        }
+
+        function renderHistory() {
+            historyContent.innerHTML = history.length ? history.map(log =>
+                `<strong>[${new Date(log.timestamp).toLocaleString()}] ${log.action}: ${log.item}</strong>\n  - ${log.details.join('\n  - ')}`
+            ).join('\n\n') : "No hay cambios registrados.";
+        }
+
+        clearHistoryBtn.addEventListener('click', () => {
+            if (confirm("¿Seguro?")) {
+                history = [];
+                renderHistory();
+                writeHistoryToFile();
+            }
+        });
+
+        async function saveDataToFile() {
+            if (!dbFileHandle) {
+                alert("No se puede guardar: la base de datos no está vinculada.");
+                return;
+            }
+            // Primero lee el archivo para obtener la versión más reciente (con informes, etc.)
+            const file = await dbFileHandle.getFile();
+            const content = await file.text();
+            const jsonString = content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1);
+            const currentFullDatabase = JSON.parse(jsonString);
+
+            // Ahora, reconstruye la sección 'data' del inventario desde nuestra memoria 'allItems'
+            const groupedData = allItems.reduce((acc, item) => {
+                const { originalIndex, ...itemToSave } = item;
+                const cajaKey = item.caja || 'null';
+                if (!acc[cajaKey]) acc[cajaKey] = [];
+                acc[cajaKey].push(itemToSave);
+                return acc;
+            }, {});
+
+            const newTimestamp = new Date().toISOString();
+            
+            // Actualiza solo la sección de inventario en el objeto que leímos
+            currentFullDatabase.inventario = {
+                ...currentFullDatabase.inventario, // Mantiene otras propiedades si las hubiera
+                lastUpdated: newTimestamp,
+                data: groupedData
+            };
+            
+            const fileContent = `const MasterDB = ${JSON.stringify(currentFullDatabase, null, 2)};\n\nexport default MasterDB;`;
+
+            try {
+                const writable = await dbFileHandle.createWritable();
+                await writable.write(fileContent);
+                await writable.close();
+                updateLastUpdated(newTimestamp);
+            } catch (error) {
+                console.error("Error al guardar:", error);
+                alert("Error al guardar el archivo.");
+            }
+        }
+
+        async function linkAndSaveHistory() {
+            if (!window.showSaveFilePicker) {
+                alert("Tu navegador no soporta esta función.");
+                return;
+            }
+            try {
+                historyFileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'historial_cambios.js',
+                    types: [{ description: 'JavaScript files', accept: { 'text/javascript': ['.js'] } }],
+                });
+                await writeHistoryToFile(true);
+            } catch (error) {
+                if (error.name !== 'AbortError') console.error("Error al vincular/guardar historial:", error);
+            }
+        }
+
+        async function writeHistoryToFile(showAlertOnSuccess = false) {
+            if (!historyFileHandle) return;
+            const fileContent = `const historial = ${JSON.stringify(history, null, 2)};`;
+            try {
+                const writable = await historyFileHandle.createWritable();
+                await writable.write(fileContent);
+                await writable.close();
+                if (showAlertOnSuccess) alert('Historial guardado y vinculado.');
+            } catch (error) {
+                console.error("Error al autoguardar el historial:", error);
+            }
+        }
+
+        function findOriginalItem(item) {
+            return allItems.find(original => original.originalIndex === item.originalIndex);
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Informe Técnico • Newtech Solutions</title>
+  <script src="./html2pdf.bundle.min.js"></script>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+  <link rel="manifest" href="./site.webmanifest">
+
+  <style>:root {
+  --bg: #0b0d10; --card: #151922; --ink: #e9eef6; --muted: #96a0ad; --accent: #4cc3ff;
+  --ok: #4ddf88; --warn: #ffbf4c; --danger: #ff6b6b; --border: #263241;
+  --page-shadow: 0 12px 30px rgba(0,0,0,.55); --radius: 16px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+  --preview-scale: 0.42;
+  --transition-fast: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+  padding: 20px; display: grid; grid-template-rows: auto auto 1fr;
+  gap: 12px; height: 100vh; overflow: hidden;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+header, .nav-tabs, .wrap {
+  animation: fadeInUp 0.5s 0.1s both cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+
+.brand .title-block { display: flex; flex-direction: column; }
+
+.logo {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  color: #0b0d10; font-weight: 900; background: linear-gradient(135deg, #4cc3ff, #4ddf88);
+  box-shadow: 0 6px 18px rgba(76, 195, 55, .35);
+  transition: var(--transition-smooth);
+}
+.brand:hover .logo { transform: rotate(-10deg) scale(1.1); box-shadow: 0 8px 24px rgba(76, 195, 55, .45); }
+.brand h1 { font-size: 18px; margin: 0; letter-spacing: .4px; }
+.sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.nav-tabs { display: flex; gap: 8px; }
+
+.tab {
+  padding: 8px 12px; border-radius: 10px; background: var(--card); border: 1px solid var(--border);
+  cursor: pointer; font-weight: 700;
+  transition: var(--transition-fast);
+}
+.tab:hover {
+  transform: translateY(-2px); background: #1f2632; border-color: #3a4a5f;
+}
+.tab.active {
+  background: linear-gradient(135deg, #4cc3ff, #4ddf88); color: #081018;
+  box-shadow: 0 6px 18px rgba(76, 195, 55, .12);
+  transform: translateY(0);
+}
+
+.wrap {
+  display: grid; grid-template-columns: 420px 1fr; gap: 20px;
+  align-items: start; overflow: hidden; height: calc(100% - 20px);
+}
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px;
+  transition: var(--transition-smooth);
+}
+.form-card { overflow-y: auto; height: 100%; }
+.card h2 { margin: 4px 0 12px 0; font-size: 16px; color: var(--ink); }
+label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+
+input[type="text"], input[type="date"], input[type="time"], input[type="number"], textarea {
+  width: 100%; padding: 10px 12px; background: #0e1218; color: var(--ink); border: 1px solid #2a394c;
+  border-radius: 10px; outline: none; font-size: 14px;
+  transition: var(--transition-fast);
+  box-shadow: 0 0 0 0px rgba(76, 195, 255, 0);
+}
+input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="number"]:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76, 195, 255, 0.2);
+}
+
+textarea { min-height: 80px; resize: vertical; }
+.row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.row > div { min-width: 0; }
+
+label { font-size: clamp(12px, 1.2vw, 13px); }
+input[type="text"], input[type="date"], input[type="time"], input[type="number"], textarea {
+  font-size: clamp(13px, 1.4vw, 6px);
+}
+input[type="time"], input[type="date"], input[type="number"] { padding: 8px 10px; }
+
+.row--date-time { grid-template-columns: 0.55fr 1.1fr; }
+.row--date-time .date-col { min-width: 0; }
+.row--date-time .time-col { min-width: 0; }
+.time-row { grid-template-columns: 0fr 1fr; gap: 0px; }
+
+@media (max-width: 480px) {
+  .row--date-time { grid-template-columns: 1fr; }
+  .time-row { grid-template-columns: 1fr; }
+}
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.counter { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.counter .status { font-family: var(--mono); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+.btn {
+  appearance: none; border: none; cursor: pointer; padding: 10px 14px; border-radius: 12px;
+  font-weight: 700; font-size: 14px; background: #0e1218; color: var(--ink);
+  border: 1px solid #2a394c;
+  transition: var(--transition-fast);
+  transform: translateY(0);
+  text-decoration: none; display: inline-block;
+}
+.btn:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.btn:active {
+  transform: translateY(0);
+  filter: brightness(1);
+}
+.btn:disabled { cursor: not-allowed; filter: grayscale(0.6); transform: translateY(0); box-shadow: none; }
+.btn.primary { background: linear-gradient(135deg, #4cc3ff, #4ddf88); color: #0b0d10; border: none; }
+.btn.save { border-color: #4cc3ff; color: #4cc3ff; }
+.btn.warn { border-color: #ffbf4c66; }
+.btn.danger { border-color: #ff6b6b66; color: #ffb3b3; }
+.db-status { font-size: 12px; color: var(--muted); padding: 0; margin-top: 6px; border: none; border-radius: 0; }
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2) contrast(1);
+}
+input[type="date"], input[type="time"] { color-scheme: dark light; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--border) var(--card); }
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--card); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; border: 3px solid var(--card); }
+::-webkit-scrollbar-thumb:hover { background-color: var(--muted); }
+
+.preview { display: flex; justify-content: center; align-items: flex-start; overflow: auto; height: 100%; }
+.page {
+  width: 8.5in; min-height: 11in; background: white !important; color: #111 !important; box-shadow: var(--page-shadow);
+  border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #e8eaef;
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+.page-inner { padding: 18mm; font-family: "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.4; }
+.p-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e7ecf5; padding-bottom: 8px; }
+.p-brand { display: flex; align-items: center; gap: 10px; }
+.p-logo { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: white !important; font-weight: 900; background: linear-gradient(135deg, #4cc3ff, #4ddf88); }
+.p-title { margin: 0; font-size: 13pt; font-weight: 800; letter-spacing: .4px; color: #111 !important; }
+.badge { font-size: 8.5pt; font-weight: 700; color: #155; background: #dff7ff; border: 1px solid #b4ecff; padding: 4px 8px; border-radius: 999px; }
+.p-meta { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin: 12px 0 8px; }
+.p-meta .box { background: #f7f9fc; border: 1px solid #e7ecf5; border-radius: 10px; padding: 8px 10px; }
+.p-meta .label { color: #50627a; font-size: 9pt; margin-bottom: 2px; }
+.p-meta .value { font-weight: 700; font-size: 11pt; }
+.section { margin-top: 10px; }
+.section h3 { margin: 0 0 6px 0; color: #223; border-bottom: 1px dashed #dfe6f0; padding-bottom: 4px; transition: font-size .2s; }
+.section p { margin: 0; text-align: justify; white-space: pre-wrap; word-wrap: break-word; transition: font-size .2s; }
+.list { margin: 0; padding-left: 18px; transition: font-size .2s; }
+.list li { margin-bottom: 3px; }
+.footer { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 8px 18mm; border-top: 1px solid #e7ecf5; font-size: 9pt; color: #556; }
+
+.page.is-generating-pdf { transform: none !important; box-shadow: none !important; }
+
+.left-panel { height: 100%; display: flex; flex-direction: column; gap: 0; position: relative; }
+.search-panel, #generatePanel {
+  animation: fadeIn 0.4s ease;
+  width: 100%;
+}
+.search-panel { display: none; height: 100%; }
+.search-panel.active { display: block; }
+
+.reports-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.reports-table thead th { text-align: left; padding: 8px; color: var(--muted); font-weight: 700; border-bottom: 1px solid #263241; }
+.reports-table tbody td { padding: 8px; border-bottom: 1px dashed #1f2832; }
+.reports-table tbody tr { cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; }
+.reports-table tbody tr:hover { background: #0f151a; transform: scale(1.01); }
+.reports-table tbody tr.selected-row { background: rgba(76, 195, 255, 0.1); }
+
+.pagination { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 8px; }
+.arrow-btn {
+  background: transparent; border: 1px solid var(--border); padding: 6px 8px; border-radius: 8px;
+  cursor: pointer; transition: var(--transition-fast);
+}
+.arrow-btn:hover { background: var(--border); color: var(--accent); }
+
+.page.font-size-1 .section h3 { font-size: 10.5pt; } .page.font-size-1 .section p, .page.font-size-1 .list { font-size: 9.5pt; }
+.page.font-size-2 .section h3 { font-size: 11pt; } .page.font-size-2 .section p, .page.font-size-2 .list { font-size: 10pt; }
+.page.font-size-3 .section h3 { font-size: 12.5pt; } .page.font-size-3 .section p, .page.font-size-3 .list { font-size: 12pt; }
+.page.font-size-4 .section h3 { font-size: 16.5pt; } .page.font-size-4 .section p, .page.font-size-4 .list { font-size: 16pt; }
+.page.font-size-5 .section h3 { font-size: 18.6pt; } .page.font-size-5 .section p, .page.font-size-5 .list { font-size: 18pt; }
+
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+  .preview { display: none; }
+  .row { grid-template-columns: 1fr; }
+  .brand h1 { font-size: 16px; }
+  .nav-tabs { padding: 8px 12px; font-size: 13px; }
+}
+
+.form-section { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
+.form-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+@keyframes slideDownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#searchResults { margin-top: 5px; border-radius: 8px; overflow: hidden; }
+.search-item {
+  padding: 8px 12px; background: #0e1218; border-bottom: 1px solid #2a394c; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: background-color 0.2s ease;
+  animation: slideDownFadeIn 0.3s ease-out both;
+}
+.search-item:hover { background: #1c232e; }
+.search-item:last-child { border-bottom: none; }
+.item-name { font-weight: 600; }
+.item-details { font-size: 11px; color: var(--muted); }
+.item-stock { font-size: 12px; padding: 3px 6px; border-radius: 6px; }
+.item-stock.ok { background: #4ddf8820; color: #4ddf88; }
+.item-stock.warn { background: #ffbf4c20; color: #ffbf4c; }
+.item-stock.danger { background: #ff6b6b20; color: #ff6b6b; }
+
+#cambiadosList { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+.added-item {
+  display: flex; justify-content: space-between; align-items: center; background: #0e1218;
+  padding: 6px 10px; border-radius: 8px; font-size: 13px; border: 1px solid #2a394c;
+  animation: slideDownFadeIn 0.3s ease-out both;
+}
+.remove-item-btn {
+  color: #ff8b8b; cursor: pointer; font-weight: bold; padding: 0 5px; font-family: var(--mono);
+  transition: color 0.2s, transform 0.2s;
+}
+.remove-item-btn:hover { color: #ff6b6b; transform: scale(1.2); }
+
+#startupOverlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(11, 13, 16, 0.95);
+  backdrop-filter: blur(10px); z-index: 9999;
+  display: none;
+  justify-content: center; align-items: center;
+  flex-direction: column; text-align: center; padding: 20px;
+  animation: fadeIn 0.4s ease;
+}
+.overlay-box { max-width: 500px; animation: fadeInUp 0.5s 0.2s both cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.overlay-box h1 { font-size: 24px; color: var(--accent); }
+.overlay-box p { color: var(--muted); margin-bottom: 24px; }
+.db-link-status { display: flex; justify-content: space-between; align-items: center; width: 100%; background: var(--card); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); }
+.status-light { width: 12px; height: 12px; border-radius: 50%; transition: background .3s, box-shadow .3s; }
+.status-light.pending { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+.status-light.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  </style>
+</head>
+<body>
+  <div id="startupOverlay">
+    <div class="overlay-box">
+        <div class="brand" style="justify-content:center; margin-bottom:16px;">
+            <div class="logo">N</div><h1>Newtech Solutions</h1>
+        </div>
+        <p>Para comenzar, por favor vincula el archivo de la base de datos (DataBase.js).</p>
+        <div class="db-link-status">
+            <span>Base de Datos (DataBase.js)</span>
+            <div id="dbStatusLight" class="status-light pending"></div>
+        </div>
+        <div class="btns" style="justify-content:center;">
+        </div>
+            <button class="btn save" id="bindDbBtn">Vincular Base de Datos</button>
+        <p class="hint" style="margin-top:20px;">La aplicación funcionará sin conexión una vez vinculado el archivo.</p>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="logo">N</div>
+      <div class="title-block">
+        <h1>Newtech Solutions • Generador de Informe Técnico</h1>
+        <div class="sub">Rellena los datos, guarda y descarga el PDF.</div>
+        <div id="dbStatus" class="db-status">Base de Datos: <b>No vinculada</b></div>
+      </div>
+    </div>
+   <div style="display:flex; gap:12px; align-items:center">
+     <a href="inventario/index.html" target="_blank" class="btn primary" style="text-decoration: none;">Ir a Inventario</a>
+     <a href="Preventivos/index.html" target="_blank" class="btn" style="text-decoration: none;">Ir a Preventivos</a>
+   </div>
+  </header>
+
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="nav-tabs" role="tablist">
+      <div id="tabGenerate" class="tab active" role="tab" aria-selected="true">Generar informe</div>
+      <div id="tabSearch" class="tab" role="tab" aria-selected="false">Buscar informes</div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="card form-card left-panel" id="leftPanel">
+      <div id="generatePanel">
+        <div class="form-section">
+            <h2>Datos Generales</h2>
+            <div class="row row--date-time">
+              <div class="date-col">
+                  <label for="fecha">Fecha</label><input id="fecha" type="date" required />
+              </div>
+              <div class="time-col">
+                  <label>Horario</label>
+                  <div class="row time-row"><input id="horaInicio" type="time" required /><input id="horaFin" type="time" required /></div>
+              </div>
+            </div>
+            <label for="maquina">Máquina</label><input id="maquina" type="text" placeholder="p.ej. Máquina #24" maxlength="30" />
+            <label for="tecnico">Técnico encargado</label><input id="tecnico" type="text" placeholder="p.ej. Juan Pérez" maxlength="50" />
+        </div>
+        
+        <div class="form-section">
+            <h2>Resumen de Actividades</h2>
+            <textarea id="resumen" placeholder="Describe brevemente las tareas clave, mediciones y pruebas."></textarea>
+            <div class="counter"><span id="resumenHint"></span><span class="status" id="resumenCount"></span></div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Gestión de Repuestos</h2>
+            <label for="repSearchInput">Repuestos cambiados</label>
+            <div style="display:grid; grid-template-columns: 1fr auto auto; gap:8px;">
+              <input type="text" id="repSearchInput" placeholder="Buscar por código o nombre...">
+              <input type="number" id="repQuantityInput" value="1" min="1" style="width: 70px;">
+              <button class="btn primary" id="addRepBtn" style="padding: 8px 12px;">+</button>
+            </div>
+            <div id="searchResults"></div>
+            <div id="cambiadosList"></div>
+            <div class="counter" style="margin-top:8px;">
+                <span class="hint">Límite según tamaño de letra</span><span class="status" id="cambiadosCounter">Añadidos: 0 / 0</span>
+            </div>
+            
+            <label for="repPendientes" style="margin-top:16px;">Necesario comprar / Pendientes (manual)</label>
+            <textarea id="repPendientes" placeholder="Añade ítems que no estén en el inventario. El bajo stock se añade solo."></textarea>
+        </div>
+
+        <div class="form-section">
+            <div class="btns">
+              <button class="btn primary" id="printBtn">Descargar PDF</button>
+              <button class="btn save" id="saveDbBtn">Guardar Datos</button>
+              <button class="btn danger" id="clearBtn">Limpiar</button>
+              <button class="btn warn" id="formatBtn">Tamaño de letra</button>
+            </div>
+        </div>
+      </div>
+
+      <div id="searchPanel" class="search-panel" aria-hidden="true">
+         <h2>Buscar informes</h2>
+         <div style="display:flex; gap:8px; margin-bottom:10px; align-items:center">
+           <input id="searchInput" type="text" placeholder="Buscar por máquina, técnico o fecha..." style="flex:1" />
+         </div>
+         <div style="overflow:auto; max-height:380px;">
+           <table class="reports-table" id="reportsTable">
+             <thead><tr><th>Fecha</th><th>Máquina</th><th>Técnico</th><th>Resumen</th><th style="width:120px">Guardado</th></tr></thead>
+             <tbody></tbody>
+           </table>
+         </div>
+         <div class="pagination">
+           <div id="olderArrow" class="arrow-btn" title="Mostrar más" style="display:none">›</div>
+           <div id="newerArrow" class="arrow-btn" title="Volver" style="display:none">‹</div>
+         </div>
+         <div style="display:flex; gap:8px; margin-top:8px; align-items:center">
+           <button class="btn primary" id="downloadSelectedBtn" disabled>Descargar PDF</button>
+           <button class="btn danger" id="deleteSelectedBtn" disabled>Borrar informe</button>
+           <div id="selectedInfo" style="color:var(--muted); font-size:13px"></div>
+         </div>
+      </div>
+    </section>
+
+    <section class="preview card">
+       <div class="preview-scaler"> 
+        <article class="page" id="pageToPrint">
+            <div class="page-inner">
+                <div class="p-header">
+                    <div class="p-brand">
+                        <div class="p-logo">N</div>
+                        <div>
+                            <h2 class="p-title">Informe técnico de mantenimiento</h2>
+                            <div style="font-size:9pt;color:#50627a">Newtech Solutions</div>
+                        </div>
+                    </div>
+                    <div class="badge">Documento interno</div>
+                </div>
+                <div class="p-meta">
+                    <div class="box">
+                        <div class="label">Fecha y Hora del mantenimiento</div>
+                        <div class="value" id="outFechaHora">—</div>
+                    </div>
+                    <div class="box">
+                        <div class="label">Máquina</div>
+                        <div class="value" id="outMaquina">—</div>
+                    </div>
+                </div>
+                <section class="section" style="margin-top: 15px;"><h3>Resumen de actividades</h3><p id="outResumen">—</p></section>
+                <section class="section" style="margin-top: 15px;"><h3>Repuestos cambiados</h3><ul class="list" id="outCambiados"><li>—</li></ul></section>
+                <section class="section"><h3>Necesario comprar</h3><ul class="list" id="outPendientes"><li>—</li></ul></section>
+                <div class="footer">
+                    <div>Generado: <span id="outStamp">—</span></div>
+                    <div>Página 1 de 1</div>
+                    <div id="outTecnico">Técnico: —</div>
+                </div>
+            </div>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const App = {
+      elements: {
+        fecha: document.querySelector('#fecha'), horaInicio: document.querySelector('#horaInicio'), horaFin: document.querySelector('#horaFin'),
+        maquina: document.querySelector('#maquina'), tecnico: document.querySelector('#tecnico'), resumen: document.querySelector('#resumen'),
+        repPendientes: document.querySelector('#repPendientes'),
+        outputs: {
+          fechaHora: document.querySelector('#outFechaHora'), maquina: document.querySelector('#outMaquina'), resumen: document.querySelector('#outResumen'),
+          cambiados: document.querySelector('#outCambiados'), pendientes: document.querySelector('#outPendientes'), stamp: document.querySelector('#outStamp'),
+          tecnico: document.querySelector('#outTecnico'),
+        },
+        buttons: {
+          print: document.querySelector('#printBtn'), saveDb: document.querySelector('#saveDbBtn'),
+          clear: document.querySelector('#clearBtn'), format: document.querySelector('#formatBtn'),
+        },
+        page: document.querySelector('.page'), dbStatus: document.querySelector('#dbStatus'),
+        startupOverlay: document.querySelector('#startupOverlay'), 
+        bindDbBtn: document.querySelector('#bindDbBtn'), 
+        dbStatusLight: document.querySelector('#dbStatusLight'), 
+        repSearchInput: document.querySelector('#repSearchInput'),
+        repQuantityInput: document.querySelector('#repQuantityInput'), addRepBtn: document.querySelector('#addRepBtn'),
+        searchResults: document.querySelector('#searchResults'), cambiadosList: document.querySelector('#cambiadosList'),
+        cambiadosCounter: document.querySelector('#cambiadosCounter'), resumenHint: document.querySelector('#resumenHint'),
+        resumenCount: document.querySelector('#resumenCount'), tabGenerate: document.querySelector('#tabGenerate'),
+        tabSearch: document.querySelector('#tabSearch'), generatePanel: document.querySelector('#generatePanel'),
+        searchPanel: document.querySelector('#searchPanel'), reportsTableBody: document.querySelector('#reportsTable tbody'),
+        searchInput: document.querySelector('#searchInput'), olderArrow: document.querySelector('#olderArrow'),
+        newerArrow: document.querySelector('#newerArrow'),
+        downloadSelectedBtn: document.querySelector('#downloadSelectedBtn'), deleteSelectedBtn: document.querySelector('#deleteSelectedBtn'),
+        selectedInfo: document.querySelector('#selectedInfo'),
+      },
+
+      state: {
+        inventory: [], databaseHandle: null, currentCambiados: [],
+        selectedInventoryItem: null, reports: [], pageSize: 10, currentPage: 0, selectedReportId: null,
+      },
+
+      fontClasses: ['font-size-1','font-size-2','font-size-3','font-size-4','font-size-5'],
+      limits: {
+        bySize: {
+          'font-size-1': { resumenMaxLines: 16, listMaxItems: 14 }, 'font-size-2': { resumenMaxLines: 15, listMaxItems: 12 },
+          'font-size-3': { resumenMaxLines: 14, listMaxItems: 11 }, 'font-size-4': { resumenMaxLines: 10, listMaxItems: 8 },
+          'font-size-5': { resumenMaxLines: 8,  listMaxItems: 7 },
+        },
+        current: {}
+      },
+      idbStoreName: 'newtech_file_handles',
+
+      async init() {
+        this.elements.page.classList.add('font-size-3');
+        this.updateLimits(); this.bindEvents(); this.renderCambiadosList();
+        
+        const dbHandle = await this.idbGet('database_handle');
+        if (dbHandle) {
+            await this.loadDatabase(dbHandle);
+        }
+        
+        this.checkBindingAndStart();
+      },
+
+      updateLimits() {
+        const currentSizeClass = this.fontClasses.find(c => this.elements.page.classList.contains(c)) || 'font-size-3';
+        this.limits.current = this.limits.bySize[currentSizeClass];
+        this.elements.resumenHint.textContent = `Máximo ${this.limits.current.resumenMaxLines} líneas`;
+        this.renderPreview(); this.renderCambiadosList();
+      },
+
+      checkBindingAndStart() {
+        if (this.state.databaseHandle) {
+          this.elements.startupOverlay.style.display = 'none';
+          this.setDefaultDateTime(); this.renderPreview();
+        } else {
+          this.elements.startupOverlay.style.display = 'flex';
+        }
+      },
+
+      bindEvents() {
+        this.elements.bindDbBtn.addEventListener('click', () => this.bindDatabaseFile());
+        
+        Object.keys(this.elements).forEach(key => {
+            const el = this.elements[key];
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+                if(el.id !== 'repSearchInput' && el.id !== 'repQuantityInput' && el.id !== 'searchInput'){
+                    el.addEventListener('input', () => this.renderPreview());
+                }
+            }
+        });
+
+        this.elements.repPendientes.addEventListener('input', () => this.renderCambiadosList());
+        
+        this.elements.buttons.print.addEventListener('click', () => this.generatePdf());
+        this.elements.buttons.saveDb.addEventListener('click', () => this.saveDataToDB());
+        this.elements.buttons.clear.addEventListener('click', () => this.clearForm());
+        this.elements.buttons.format.addEventListener('click', () => this.showFormatSelector());
+        this.elements.repSearchInput.addEventListener('input', (e) => this.handleInventorySearch(e.target.value));
+        this.elements.repSearchInput.addEventListener('focus', (e) => this.handleInventorySearch(e.target.value));
+        this.elements.addRepBtn.addEventListener('click', () => this.addRepuestoCambiado());
+        document.addEventListener('click', (e) => {
+          if (!this.elements.searchResults.contains(e.target) && e.target !== this.elements.repSearchInput) {
+            this.elements.searchResults.innerHTML = '';
+          }
+        });
+        this.elements.cambiadosList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-item-btn')) {
+                const index = parseInt(e.target.dataset.index, 10);
+                this.removeRepuestoCambiado(index);
+            }
+        });
+
+        this.elements.tabGenerate.addEventListener('click', () => this.showTab('generate'));
+        this.elements.tabSearch.addEventListener('click', () => this.showTab('search'));
+        this.elements.searchInput.addEventListener('input', () => { this.state.currentPage = 0; this.renderReportsTable(); });
+        this.elements.olderArrow.addEventListener('click', () => { this.state.currentPage++; this.renderReportsTable(); });
+        this.elements.newerArrow.addEventListener('click', () => { this.state.currentPage = Math.max(0, this.state.currentPage - 1); this.renderReportsTable(); });
+        this.elements.downloadSelectedBtn.addEventListener('click', () => { if (this.state.selectedReportId) this.generatePdfFromReportId(this.state.selectedReportId); });
+        this.elements.deleteSelectedBtn.addEventListener('click', () => { if (this.state.selectedReportId) this.deleteSelectedReport(); });
+      },
+      
+      async bindDatabaseFile() {
+        try {
+          if (!window.showOpenFilePicker) throw new Error('API no soportada.');
+          const [handle] = await window.showOpenFilePicker({ types: [{ description: 'JavaScript', accept: { 'application/javascript': ['.js'] } }] });
+          await this.loadDatabase(handle);
+          this.checkBindingAndStart();
+        } catch (e) { alert('Error al vincular la base de datos: ' + e.message); }
+      },
+
+      async loadDatabase(handle) {
+          try {
+              if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                  if (await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') throw new Error('Permiso de acceso al archivo denegado.');
+              }
+              const file = await handle.getFile(); 
+              const text = await file.text();
+              const blob = new Blob([text], { type: 'application/javascript' });
+              const url = URL.createObjectURL(blob);
+              const { default: dbModule } = await import(url);
+              URL.revokeObjectURL(url);
+
+              if (dbModule.inventario && dbModule.inventario.data) {
+                this.state.inventory = Object.values(dbModule.inventario.data).flat();
+              } else {
+                throw new Error("La estructura del 'inventario' no es válida.");
+              }
+              
+              if (dbModule.informes && Array.isArray(dbModule.informes.docs)) {
+                const docs = dbModule.informes.docs.slice();
+                docs.sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+                this.state.reports = docs;
+              } else {
+                 throw new Error("La estructura de los 'informes' no es válida.");
+              }
+              
+              this.state.databaseHandle = handle;
+              await this.idbPut('database_handle', handle);
+              this.elements.dbStatusLight.classList.replace('pending', 'ok');
+              this.updateDbStatus();
+              this.renderReportsTable();
+          } catch (e) {
+              console.error("Error cargando la base de datos:", e);
+              alert("El archivo DataBase.js no tiene el formato correcto o no se pudo leer. Error: " + e.message);
+              this.state.databaseHandle = null;
+          }
+      },
+      
+      async writeContentToHandle(handle, content) {
+        const writable = await handle.createWritable();
+        await writable.write(content);
+        await writable.close();
+      },
+      
+      async saveDataToDB() {
+        if (!this.validate() || !this.state.databaseHandle) {
+          alert("Por favor, rellena los campos obligatorios y asegúrate de que la base de datos esté vinculada.");
+          return;
+        }
+        
+        const now = new Date().toISOString();
+        
+        this.state.currentCambiados.forEach(changed => {
+            const invItem = this.state.inventory.find(item => item.codigo === changed.item.codigo && item.nombre === changed.item.nombre);
+            if (invItem) {
+                invItem.cantidad -= changed.quantity;
+            }
+        });
+        
+        const finalData = this.getFormData();
+        const newEntry = { id: now + '-' + Math.random().toString(36).slice(2, 8), savedAt: now, data: finalData };
+        
+        const updatedReports = [newEntry, ...this.state.reports];
+        
+        const newInventoryData = { "A": [], "B": [], "C": [], "D": [], "E": [], "null": [] };
+        this.state.inventory.forEach(item => {
+            const caja = item.caja || 'null';
+            if (newInventoryData.hasOwnProperty(caja)) {
+                newInventoryData[caja].push(item);
+            }
+        });
+        
+        const fullDatabaseObject = {
+          informes: { docs: updatedReports },
+          inventario: {
+            lastUpdated: now,
+            data: newInventoryData
+          }
+        };
+
+        const dbContent = `const MasterDB = ${JSON.stringify(fullDatabaseObject, null, 2)};\n\nexport default MasterDB;`;
+        
+        try {
+          await this.writeContentToHandle(this.state.databaseHandle, dbContent);
+          this.state.reports = updatedReports;
+          alert('Informe y stock de inventario guardados correctamente.');
+          this.renderReportsTable();
+        } catch (e) {
+          alert('Error al guardar en el archivo: ' + e.message);
+          console.error("Fallo al escribir en el archivo:", e);
+          await this.loadDatabase(this.state.databaseHandle);
+        }
+      },
+      
+      handleInventorySearch(query) {
+        this.elements.searchResults.innerHTML = '';
+        if (query.length < 2) return;
+        
+        const lowerQuery = query.toLowerCase();
+        const results = this.state.inventory
+          .filter(item => (item.nombre && item.nombre.toLowerCase().includes(lowerQuery)) || (item.codigo && String(item.codigo).toLowerCase().includes(lowerQuery)))
+          .slice(0, 4);
+
+        results.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'search-item';
+          div.innerHTML = `<div><div class="item-name">${this.sanitize(item.nombre)}</div><div class="item-details">Código: ${item.codigo || 'N/A'}</div></div><span class="item-stock ${item.cantidad < 2 ? 'danger' : item.cantidad < 5 ? 'warn' : 'ok'}">Stock: ${item.cantidad}</span>`;
+          div.addEventListener('click', () => this.selectInventoryItem(item));
+          this.elements.searchResults.appendChild(div);
+        });
+      },
+
+      selectInventoryItem(item) {
+        this.elements.repSearchInput.value = item.nombre;
+        this.state.selectedInventoryItem = item;
+        this.elements.searchResults.innerHTML = '';
+        this.elements.repQuantityInput.focus();
+      },
+
+      addRepuestoCambiado() {
+          const maxItems = this.getCurrentMaxItems();
+          if (this.state.currentCambiados.length >= maxItems) {
+              alert(`No puedes añadir más repuestos. El límite dinámico es ${maxItems} para este tamaño de letra y los pendientes actuales.`); return;
+          }
+          const item = this.state.selectedInventoryItem;
+          const quantity = parseInt(this.elements.repQuantityInput.value, 10);
+          if (!item) { alert('Por favor, selecciona un repuesto de la lista.'); return; }
+          if (isNaN(quantity) || quantity <= 0) { alert('Introduce una cantidad válida.'); return; }
+          if (quantity > item.cantidad) { alert(`No hay suficiente stock. Disponible: ${item.cantidad}`); return; }
+
+          this.state.currentCambiados.push({ item, quantity });
+          this.state.selectedInventoryItem = null;
+          this.elements.repSearchInput.value = ''; this.elements.repQuantityInput.value = '1';
+          this.elements.repSearchInput.focus();
+          this.renderCambiadosList(); this.renderPreview();
+      },
+
+      removeRepuestoCambiado(index) {
+        this.state.currentCambiados.splice(index, 1);
+        this.renderCambiadosList(); this.renderPreview();
+      },
+      
+      getCurrentMaxItems() {
+        const baseMax = this.limits.current.listMaxItems || 0;
+        const lowStockItems = this.state.currentCambiados.filter(e => (e.item.cantidad - e.quantity) < 2).length;
+        const manualLines = (this.elements.repPendientes.value.match(/\n/g) || []).length + (this.elements.repPendientes.value ? 1 : 0);
+        return baseMax - lowStockItems - manualLines;
+      },
+      
+      renderCambiadosList() {
+        this.elements.cambiadosList.innerHTML = this.state.currentCambiados.map((entry, index) => `<div class="added-item"><span>${this.sanitize(entry.item.nombre)} (x${entry.quantity})</span><span class="remove-item-btn" data-index="${index}">✖</span></div>`).join('');
+        const maxItems = this.getCurrentMaxItems();
+        const currentCount = this.state.currentCambiados.length;
+        this.elements.cambiadosCounter.textContent = `Añadidos: ${currentCount} / ${Math.max(currentCount, maxItems)}`;
+      },
+
+      getFormData() {
+        const currentSizeClass = this.fontClasses.find(c => this.elements.page.classList.contains(c)) || 'font-size-3';
+        return {
+          fecha: this.elements.fecha.value, horaInicio: this.elements.horaInicio.value, horaFin: this.elements.horaFin.value,
+          maquina: this.elements.maquina.value, tecnico: this.elements.tecnico.value, resumen: this.elements.resumen.value,
+          cambiados: this.state.currentCambiados.map(e => `${e.item.nombre} (Cantidad: ${e.quantity})`).join('\n'),
+          pendientes: this.elements.repPendientes.value, fontSizeClass: currentSizeClass, _cambiadosFull: this.state.currentCambiados,
+        };
+      },
+
+      renderPreview() {
+        const data = this.getFormData();
+        let fechaHoraStr = '—';
+        if (data.fecha) {
+          const fechaObj = new Date(data.fecha + 'T00:00:00');
+          const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+          fechaHoraStr = `${fechaFormateada} <br> <span style="font-size:10pt; color:#50627a;">(${data.horaInicio || 'HH:MM'} - ${data.horaFin || 'HH:MM'})</span>`;
+        }
+        
+        this.elements.outputs.fechaHora.innerHTML = fechaHoraStr;
+        this.elements.outputs.maquina.innerHTML = this.sanitize(data.maquina.trim()) || '—';
+        this.elements.outputs.resumen.innerHTML = this.sanitize(data.resumen.trim()).replace(/\n/g, '<br>') || '—';
+        this.elements.outputs.tecnico.textContent = data.tecnico.trim() ? `Técnico: ${this.sanitize(data.tecnico.trim())}` : 'Técnico: —';
+        
+        const cambiadosList = this.state.currentCambiados.map(e => `<li>${this.sanitize(e.item.nombre)} (Cantidad: ${e.quantity})</li>`).join('');
+        this.elements.outputs.cambiados.innerHTML = cambiadosList || '<li>No aplica</li>';
+        
+        const lowStockItems = this.state.currentCambiados
+          .filter(e => (e.item.cantidad - e.quantity) < 2)
+          .map(e => `<li>${this.sanitize(e.item.nombre)} (Stock bajo)</li>`)
+          .join('');
+        const manualPendientes = (data.pendientes || '').split('\n').filter(Boolean).map(line => `<li>${this.sanitize(line)}</li>`).join('');
+        
+        this.elements.outputs.pendientes.innerHTML = lowStockItems + manualPendientes || '<li>No aplica</li>';
+        this.elements.outputs.stamp.textContent = new Date().toLocaleString('es-ES');
+        
+        const resumenLines = data.resumen ? data.resumen.split(/\r?\n/).length : 0;
+        this.elements.resumenCount.textContent = `${resumenLines}/${this.limits.current.resumenMaxLines}`;
+      },
+      
+      clearForm() {
+        if (!confirm('¿Limpiar todos los campos del formulario?')) return;
+        ['maquina', 'tecnico', 'resumen', 'repPendientes', 'repSearchInput'].forEach(id => { this.elements[id].value = ''; });
+        this.setDefaultDateTime(); this.state.currentCambiados = [];
+        this.renderCambiadosList(); this.elements.page.classList.remove(...this.fontClasses);
+        this.elements.page.classList.add('font-size-3'); this.updateLimits(); this.renderPreview();
+      },
+
+      setDefaultDateTime() {
+        const now = new Date();
+        this.elements.fecha.value = now.toISOString().split('T')[0];
+        this.elements.horaInicio.value = '08:00'; this.elements.horaFin.value = '17:00';
+      },
+      
+      updateDbStatus() {
+        const dbName = this.state.databaseHandle ? this.state.databaseHandle.name : 'No vinculada';
+        this.elements.dbStatus.innerHTML = `Base de Datos: <b>${dbName}</b>`;
+      },
+
+      showFormatSelector() {
+        const selection = prompt(`Elige un tamaño de letra:\n1: XS, 2: S, 3: M, 4: L, 5: XL`, '3');
+        if (selection === null) return;
+        const choice = parseInt(selection, 10);
+        if (isNaN(choice) || choice < 1 || choice > 5) { alert('Selección no válida.'); return; }
+        this.elements.page.classList.remove(...this.fontClasses);
+        this.elements.page.classList.add(`font-size-${choice}`);
+        this.updateLimits();
+        const maxItems = this.getCurrentMaxItems();
+        if (this.state.currentCambiados.length > maxItems) {
+            alert('Has excedido el número de repuestos para este tamaño. Se eliminarán los últimos.');
+            this.state.currentCambiados = this.state.currentCambiados.slice(0, maxItems);
+            this.renderCambiadosList();
+        }
+      },
+
+      idbOp: (type, op) => new Promise((res, rej) => {
+          const r = indexedDB.open(App.idbStoreName, 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('h');
+          r.onsuccess = () => {
+              const db = r.result, tx = db.transaction('h', type), req = op(tx.objectStore('h'));
+              req.onsuccess = () => { db.close(); res(req.result); };
+              req.onerror = () => { db.close(); rej(req.error); };
+          }; r.onerror = () => rej(r.error);
+      }),
+      idbGet: (key) => App.idbOp('readonly', s => s.get(key)),
+      idbPut: (key, val) => App.idbOp('readwrite', s => s.put(val, key)),
+      sanitize: str => { const t = document.createElement('div'); t.textContent = str; return t.innerHTML; },
+      
+      showTab(which) {
+        this.elements.tabGenerate.classList.toggle('active', which === 'generate');
+        this.elements.tabSearch.classList.toggle('active', which !== 'generate');
+        this.elements.generatePanel.style.display = which === 'generate' ? '' : 'none';
+        this.elements.searchPanel.classList.toggle('active', which !== 'generate');
+        if (which !== 'generate') { this.state.currentPage = 0; this.renderReportsTable(); }
+      },
+
+      validate() {
+        const { fecha, horaInicio, horaFin, maquina, tecnico, resumen } = this.elements;
+        const errors = [];
+        if (!fecha.value) errors.push('Fecha'); if (!horaInicio.value || !horaFin.value) errors.push('Horario');
+        if (!maquina.value.trim()) errors.push('Máquina'); if (!tecnico.value.trim()) errors.push('Técnico');
+        if (!resumen.value.trim() && this.state.currentCambiados.length === 0) errors.push('Resumen o repuestos');
+        if (errors.length > 0) { alert('Campos obligatorios:\n- ' + errors.join('\n- ')); return false; }
+        return true;
+      },
+      
+      async generatePdf(opts = {}) {
+        if (typeof html2pdf === "undefined") return;
+        if (!opts.skipValidation && !this.validate()) return;
+        const element = this.elements.page, btn = this.elements.buttons.print;
+        const fileName = `Informe_${this.elements.fecha.value}_${this.elements.maquina.value.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+        const options = { margin: 0, filename: fileName, image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+        try {
+          btn.disabled = true; btn.textContent = 'Generando...'; element.classList.add('is-generating-pdf');
+          await new Promise(r => setTimeout(r, 100)); await html2pdf().set(options).from(element).save();
+        } finally {
+          element.classList.remove('is-generating-pdf'); btn.disabled = false; btn.textContent = 'Descargar PDF';
+        }
+      },
+
+      fillPreviewFromData(data, savedAt) {
+          this.elements.page.classList.remove(...this.fontClasses);
+          this.elements.page.classList.add(data.fontSizeClass || 'font-size-3');
+
+          try {
+            if (this.elements.fecha) this.elements.fecha.value = data.fecha || '';
+            if (this.elements.horaInicio) this.elements.horaInicio.value = data.horaInicio || '';
+            if (this.elements.horaFin) this.elements.horaFin.value = data.horaFin || '';
+            if (this.elements.maquina) this.elements.maquina.value = data.maquina || '';
+            if (this.elements.tecnico) this.elements.tecnico.value = data.tecnico || '';
+            if (this.elements.resumen) this.elements.resumen.value = data.resumen || '';
+            if (this.elements.repPendientes) this.elements.repPendientes.value = data.pendientes || '';
+
+            this.state.currentCambiados = Array.isArray(data._cambiadosFull) ? data._cambiadosFull.slice() : [];
+            this.renderCambiadosList();
+          } catch (e) {
+            console.warn('No se pudieron rellenar todos los campos del formulario desde el informe:', e);
+          }
+
+          let fechaHoraStr = '—';
+          if (data && data.fecha) {
+            const fechaObj = new Date(data.fecha + 'T00:00:00');
+            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            fechaHoraStr = `${fechaFormateada} <br> <span style="font-size:10pt; color:#50627a;">(${data.horaInicio || ''} - ${data.horaFin || ''})</span>`;
+          }
+
+          this.elements.outputs.fechaHora.innerHTML = fechaHoraStr;
+          this.elements.outputs.maquina.innerHTML = this.sanitize(data.maquina || '');
+          this.elements.outputs.resumen.innerHTML = this.sanitize(data.resumen || '').replace(/\n/g, '<br>');
+          this.elements.outputs.tecnico.textContent = `Técnico: ${this.sanitize(data.tecnico || '')}`;
+          this.elements.outputs.cambiados.innerHTML = (data.cambiados || '').split('\n').filter(Boolean).map(i => `<li>${this.sanitize(i)}</li>`).join('') || '<li>No aplica</li>';
+
+          const lowStockItems = (data._cambiadosFull || [])
+            .filter(e => (e.item.cantidad - e.quantity) < 2)
+            .map(e => `<li>${this.sanitize(e.item.nombre)} (Stock bajo)</li>`)
+            .join('');
+          const manualPendientes = (data.pendientes || '').split('\n').filter(Boolean).map(line => `<li>${this.sanitize(line)}</li>`).join('');
+
+          this.elements.outputs.pendientes.innerHTML = lowStockItems + manualPendientes || '<li>No aplica</li>';
+          this.elements.outputs.stamp.textContent = new Date(savedAt).toLocaleString('es-ES');
+    },
+    
+  async generatePdfFromReportId(reportId) {
+    const report = this.state.reports.find(r => r.id === reportId);
+    if (!report) return;
+    this.fillPreviewFromData(report.data, report.savedAt);
+    this.showTab('generate');
+    this.renderPreview();
+    await new Promise(r => setTimeout(r, 200));
+    await this.generatePdf({ skipValidation: true });
+    this.renderPreview();
+  },
+
+    renderReportsTable() {
+        const tbody = this.elements.reportsTableBody;
+        tbody.innerHTML = '';
+        const query = (this.elements.searchInput.value || '').toLowerCase().trim();
+        const filtered = this.state.reports.filter(r => {
+            if (!query) return true;
+            const d = r.data || {};
+            return (d.maquina||'').toLowerCase().includes(query) || (d.tecnico||'').toLowerCase().includes(query) ||
+                   (d.fecha||'').toLowerCase().includes(query) || (r.savedAt||'').toLowerCase().includes(query) ||
+                   (d.resumen||'').toLowerCase().includes(query);
+        });
+        const total = filtered.length; const totalPages = Math.ceil(total / this.state.pageSize) || 1;
+        if (this.state.currentPage >= totalPages) this.state.currentPage = totalPages - 1;
+        const start = this.state.currentPage * this.state.pageSize;
+        const pageItems = filtered.slice(start, start + this.state.pageSize);
+
+        pageItems.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.dataset.reportId = item.id;
+            tr.innerHTML = `<td>${item.data.fecha || '—'}</td><td>${this.sanitize(item.data.maquina || '—')}</td><td>${this.sanitize(item.data.tecnico || '—')}</td><td>${this.sanitize((item.data.resumen || '').slice(0, 50))}...</td><td>${new Date(item.savedAt).toLocaleDateString()}</td>`;
+            tr.addEventListener('click', () => this.selectReport(item.id));
+            tbody.appendChild(tr);
+        });
+
+        this.elements.olderArrow.style.display = (this.state.currentPage + 1 < totalPages) ? '' : 'none';
+        this.elements.newerArrow.style.display = (this.state.currentPage > 0) ? '' : 'none';
+
+        if(pageItems.length === 0){
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--muted);">No hay informes que coincidan</td></tr>';
+        }
+    },
+    
+    selectReport(reportId) {
+        this.state.selectedReportId = reportId;
+        const r = this.state.reports.find(x => x.id === reportId); if (!r) return;
+        this.fillPreviewFromData(r.data, r.savedAt);
+        this.elements.downloadSelectedBtn.disabled = false;
+        this.elements.deleteSelectedBtn.disabled = false;
+        this.elements.selectedInfo.textContent = `${r.data.maquina || '—'} · ${r.data.tecnico || '—'}`;
+        // No cambiamos de pestaña al seleccionar para permitir la comparación
+    },
+    
+   async deleteSelectedReport() {
+    if (!this.state.selectedReportId || !confirm('¿Borrar este informe? Esta acción devolverá los repuestos al inventario.')) return;
+
+    const reportToDelete = this.state.reports.find(d => d.id === this.state.selectedReportId);
+    if (!reportToDelete) {
+        alert("Error: No se encontró el informe a borrar.");
+        return;
+    }
+
+    try {
+        const itemsToRestore = reportToDelete.data._cambiadosFull || [];
+        itemsToRestore.forEach(itemToRestore => {
+            const invItem = this.state.inventory.find(item => item.codigo === itemToRestore.item.codigo && item.nombre === itemToRestore.item.nombre);
+            if (invItem) {
+                invItem.cantidad = (Number(invItem.cantidad) || 0) + (Number(itemToRestore.quantity) || 0);
+            }
+        });
+
+        const updatedReports = this.state.reports.filter(d => d.id !== this.state.selectedReportId);
+
+        const now = new Date().toISOString();
+        const newInventoryData = { "A": [], "B": [], "C": [], "D": [], "E": [], "null": [] };
+        this.state.inventory.forEach(item => {
+            const caja = item.caja || 'null';
+            if (newInventoryData.hasOwnProperty(caja)) newInventoryData[caja].push(item);
+        });
+        
+        const fullDatabaseObject = {
+          "informes": { "docs": updatedReports },
+          "inventario": { "lastUpdated": now, "data": newInventoryData }
+        };
+
+        const dbContent = `const MasterDB = ${JSON.stringify(fullDatabaseObject, null, 2)};\n\nexport default MasterDB;`;
+        
+        await this.writeContentToHandle(this.state.databaseHandle, dbContent);
+        
+        this.state.reports = updatedReports;
+        alert('Informe borrado y stock devuelto al inventario.');
+        this.state.selectedReportId = null;
+        this.elements.downloadSelectedBtn.disabled = true; 
+        this.elements.deleteSelectedBtn.disabled = true;
+        this.elements.selectedInfo.textContent = '';
+        this.renderReportsTable(); 
+        this.clearForm();
+
+    } catch (e) {
+        alert("¡FALLO DETECTADO! Revisa la consola (F12) para ver el error y el objeto que causó el problema.");
+        console.error("ERROR AL BORRAR Y ESCRIBIR EN ARCHIVO:", e);
+    }
+},
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+</body>
+</html>
