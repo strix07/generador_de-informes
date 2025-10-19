@@ -122,6 +122,12 @@
     .stock-warn { color: var(--warn); font-weight: bold; }
     .stock-danger { color: var(--danger); font-weight: bold; }
 
+    .inventory-table tbody tr.selected {
+        background: #1a2531;
+        outline: 2px solid var(--accent);
+        position: relative;
+    }
+
     .pagination { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
     .pagination span { font-size: 13px; color: var(--muted); }
 
@@ -284,6 +290,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
              <div class="filters-container">
                 <div id="caja-filters"></div>
                 <button class="btn" id="low-quantity-filter-btn">Poco stock</button>
+                <button class="btn" id="select-parts-btn">Seleccionar repuestos</button>
              </div>
 
             <div class="table-container">
@@ -379,6 +386,20 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
             </div>
         </div>
     </div>
+
+    <div id="selected-parts-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Lista de Repuestos Seleccionados</h2><span class="close-btn">&times;</span></div>
+            <div class="modal-body">
+                <div id="selected-parts-summary" class="sub" style="margin-bottom:8px"></div>
+                <ul id="selected-list" style="margin:0; padding-left:18px"></ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="copy-selected-btn">Copiar lista</button>
+                <button class="btn primary" id="close-selected-btn">Cerrar</button>
+            </div>
+        </div>
+    </div>
     
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -424,6 +445,18 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
         const nextPageBtn = document.getElementById('next-page');
         const pageInfo = document.getElementById('page-info');
         const lowQuantityFilterBtn = document.getElementById('low-quantity-filter-btn');
+        const selectPartsBtn = document.getElementById('select-parts-btn');
+
+        let isSelecting = false;
+        const selectedIndexes = new Set();
+
+        function clearSelection() {
+            selectedIndexes.clear();
+            isSelecting = false;
+            selectPartsBtn.classList.remove('active');
+            selectPartsBtn.textContent = 'Seleccionar repuestos';
+            inventoryBody.querySelectorAll('tr.selected').forEach(tr => tr.classList.remove('selected'));
+        }
 
         async function loadDatabaseFromFileHandle(handle) {
             try {
@@ -584,6 +617,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
             paginatedItems.forEach(item => {
                 const row = document.createElement('tr');
                 const quantityClass = getQuantityClass(item.cantidad);
+                row.dataset.idx = item.originalIndex;
                 row.innerHTML = `
                     <td>${item.codigo || 'N/A'}</td>
                     <td>${item.nombre}</td>
@@ -591,7 +625,16 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
                     <td>${(item.loc_rack || '')}-${(item.loc_row || '')}</td>
                     <td class="${quantityClass}">${item.cantidad ?? 'N/A'}</td>
                     <td>${item.observacion || ''}</td>`;
-                row.addEventListener('click', () => openEditModal(item));
+                if (selectedIndexes.has(item.originalIndex)) row.classList.add('selected');
+                row.addEventListener('click', () => {
+                    if (isSelecting) {
+                        const idx = item.originalIndex;
+                        if (selectedIndexes.has(idx)) { selectedIndexes.delete(idx); row.classList.remove('selected'); }
+                        else { selectedIndexes.add(idx); row.classList.add('selected'); }
+                    } else {
+                        openEditModal(item);
+                    }
+                });
                 inventoryBody.appendChild(row);
             });
         }
@@ -696,6 +739,53 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
         const saveHistoryBtn = document.getElementById('save-history-btn');
         const clearHistoryBtn = document.getElementById('clear-history-btn');
         document.getElementById('history-btn').addEventListener('click', renderHistory);
+
+        const selectedPartsModal = setupModal('selected-parts-modal');
+        const selectedListEl = document.getElementById('selected-list');
+        const selectedSummaryEl = document.getElementById('selected-parts-summary');
+        const copySelectedBtn = document.getElementById('copy-selected-btn');
+        const closeSelectedBtn = document.getElementById('close-selected-btn');
+
+        // Limpiar selección al cerrar por la X
+        const selectedModalCloseBtn = selectedPartsModal.querySelector('.close-btn');
+        selectedModalCloseBtn.addEventListener('click', () => { clearSelection(); });
+        // Limpiar selección al cerrar por clic en fondo
+        window.addEventListener('click', (event) => { if (event.target === selectedPartsModal) { clearSelection(); } });
+
+        selectPartsBtn.addEventListener('click', () => {
+            if (!isSelecting) {
+                isSelecting = true;
+                selectPartsBtn.classList.add('active');
+                selectPartsBtn.textContent = 'Guardar repuestos';
+            } else {
+                const selected = [...selectedIndexes].map(idx => allItems[idx]).filter(Boolean);
+                const listHtml = selected
+                    .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''))
+                    .map(it => `<li><strong>${it.codigo || 'N/A'}</strong> - ${it.nombre || ''}</li>`)
+                    .join('');
+                selectedListEl.innerHTML = listHtml || '<li>No hay repuestos seleccionados.</li>';
+                selectedSummaryEl.textContent = `${selected.length} seleccionado(s)`;
+                selectedPartsModal.style.display = 'flex';
+                isSelecting = false;
+                selectPartsBtn.classList.remove('active');
+                selectPartsBtn.textContent = 'Seleccionar repuestos';
+            }
+        });
+
+        copySelectedBtn.addEventListener('click', async () => {
+            const selected = [...selectedIndexes].map(idx => allItems[idx]).filter(Boolean);
+            const text = selected
+                .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''))
+                .map(it => `${it.codigo || 'N/A'} - ${it.nombre || ''}`)
+                .join('\n');
+            try { await navigator.clipboard.writeText(text); alert('Lista copiada al portapapeles'); }
+            catch { alert('No se pudo copiar.'); }
+        });
+
+        closeSelectedBtn.addEventListener('click', () => {
+            document.getElementById('selected-parts-modal').style.display = 'none';
+            clearSelection();
+        });
 
         async function logHistory(action, oldData = null, newData = null) {
             const logEntry = {

@@ -3,7 +3,7 @@ const MasterDB = {
     "docs": []
   },
   "inventario": {
-    "lastUpdated": "2025-10-11T21:29:47.771Z",
+    "lastUpdated": "2025-10-12T15:59:28.759Z",
     "data": {
       "A": [
         {
